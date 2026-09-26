@@ -12,3 +12,4 @@ agents/state.json
 deployments/local.json
 contracts/broadcast/*/31337/
 server/data/
+e2e/shots/

@@ -1,0 +1,9 @@
+{
+  "name": "avaxland",
+  "private": true,
+  "workspaces": ["packages/*", "server", "web", "agents"],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present"
+  }
+}

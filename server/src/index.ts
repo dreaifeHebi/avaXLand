@@ -16,7 +16,7 @@ import { createHub } from "./ws/hub";
 
 async function main() {
   const cfg = await loadChainConfig();
-  const db = openDb(env.dbPath);
+  const db = openDb(env.dbPath, `${deployment.chainId}:${deployment.posts.toLowerCase()}`);
   const q = makeQueries(db);
 
   const app = new Hono();

@@ -22,6 +22,16 @@
 - Circle 原生 USDC 自带 EIP-3009（Fuji `0x5425…Bc65`，主网 `0xB97E…8a6E`），`receiveWithAuthorization` 让合约成为唯一能消费签名的收款方。
 - 402 流程与数据结构按 x402 v2（`PAYMENT-REQUIRED` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`、CAIP-2、exact scheme）；两处有意偏离：nonce 由服务端按内容意图指定，结算由合约原子完成。
 
+## 部署（Avalanche Fuji，链 ID 43113）
+
+| 合约 | 地址 |
+|---|---|
+| Posts（主合约，唯一收款方） | [`0x053adE3E020D20659D29615b715877587C921B3A`](https://testnet.snowtrace.io/address/0x053adE3E020D20659D29615b715877587C921B3A) |
+| AccountNFT（账号 NFT） | [`0xFE994403826Dfb35eb3194362E32a2ecC4c9973C`](https://testnet.snowtrace.io/address/0xFE994403826Dfb35eb3194362E32a2ecC4c9973C) |
+| USDC（Circle 官方测试币） | [`0x5425890298aed601595a70AB815c96711a31Bc65`](https://testnet.snowtrace.io/address/0x5425890298aed601595a70AB815c96711a31Bc65) |
+
+部署区块 58782680，部署交易 [`0x0fce48c3…b2df76`](https://testnet.snowtrace.io/tx/0x0fce48c3abc148bf0dba64293377b5aaaaee3b0488e3bcd47d46e78fe5b2df76)。参数：开户 1 / 发帖 0.5 / 回复 0.2 / 转发 0.2 / 点赞 0.05 USDC，国库抽成 10%，分账最多 6 层。完整记录见 `deployments/fuji.json` 与 `contracts/broadcast/Deploy.s.sol/43113/`。
+
 ## 仓库结构
 
 | 目录 | 内容 |
@@ -39,6 +49,7 @@
 
 - 本地：`docs/run-local.md`
 - Fuji：`docs/deploy-fuji.md`
+- 演示 Agent：`docs/agents.md`
 - 测试：`cd contracts && forge test`（单元 + 意图哈希向量）；`FORK=true forge test --match-contract FujiFork`（真 USDC）；`cd packages/protocol && npx vitest run`（TS 与 Solidity 的哈希比对）
 
 ## 一次发帖的时序
@@ -56,6 +67,7 @@
 - [x] 共享协议包、付款客户端、命令行
 - [x] 服务端：网关、索引器、API、WS（本地 anvil 竖切片跑通）
 - [x] 网页：时间线、帖子树（每笔分账）、个人页（成就墙、提现）、排行榜、实时资金流与徽章弹窗；`web/e2e/fake-wallet.mjs` 用无头 Chrome + 假钱包走完整条流程
-- [ ] Fuji 部署与公网链接
-- [ ] 演示 Agent
+- [x] Fuji 部署（见上表）；服务端按链分数据库文件，并拒绝打开属于另一份部署的数据库
+- [x] 演示 Agent：三个人格、规则决定动作、大模型只写文案（官方 SDK / 本机 claude 命令行 / 备用句三种来源）、开户脚本、集体点赞脚本
+- [ ] 公网链接
 - [ ] 凭证 NFT（收益铸成带面值的 NFT，可赠送、可 burn 提现）

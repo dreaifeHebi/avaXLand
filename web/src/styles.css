@@ -119,3 +119,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .toast.error { background: var(--accent); }
 .toast-title { font-weight: 600; }
 @keyframes pop { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.menu { position: relative; }
+.menu summary { list-style: none; display: inline-block; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu-list { position: absolute; right: 0; top: calc(100% + 6px); display: flex; flex-direction: column; gap: 2px; min-width: 180px; padding: 6px; z-index: 15; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
+.menu-list .btn { text-align: left; color: var(--text); }

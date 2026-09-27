@@ -56,10 +56,21 @@ export function Header({ onOpenAccount }: { onOpenAccount: () => void }) {
         <button className="btn ghost" onClick={() => disconnect()} title={address}>
           {shortAddr(address!)} · 断开
         </button>
-      ) : (
+      ) : connectors.length <= 1 ? (
         <button className="btn primary" disabled={isPending || !connectors[0]} onClick={() => connect({ connector: connectors[0]! })}>
           连接钱包
         </button>
+      ) : (
+        <details className="menu">
+          <summary className="btn primary">连接钱包 ▾</summary>
+          <div className="menu-list card">
+            {connectors.map((c) => (
+              <button key={c.uid} className="btn ghost" disabled={isPending} onClick={() => connect({ connector: c })}>
+                {c.name === "Injected" ? "浏览器默认钱包" : c.name}
+              </button>
+            ))}
+          </div>
+        </details>
       )}
     </header>
   );

@@ -20,7 +20,7 @@ export const env = {
   chain: process.env.CHAIN ?? "local",
   rpcUrl: process.env.RPC_URL ?? "http://127.0.0.1:8545",
   relayerKey: required("RELAYER_PRIVATE_KEY") as Hex,
-  dbPath: resolve(process.cwd(), process.env.DB_PATH ?? "./data/avaxland.db"),
+  dbPath: resolve(process.cwd(), process.env.DB_PATH ?? `./data/${process.env.CHAIN ?? "local"}.db`),
   port: Number(process.env.PORT ?? 8787),
   publicUrl: process.env.PUBLIC_URL ?? `http://localhost:${process.env.PORT ?? 8787}`,
   pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 1000),

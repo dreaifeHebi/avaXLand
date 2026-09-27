@@ -5,13 +5,18 @@
   "type": "module",
   "scripts": {
     "cli": "tsx src/cli.ts",
+    "keygen": "tsx src/keygen.ts",
+    "setup": "tsx src/setup.ts",
+    "start": "tsx src/run.ts",
+    "applaud": "tsx src/applaud.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@avaxland/client": "*",
     "@avaxland/protocol": "*",
     "dotenv": "^16.4.7",
-    "viem": "^2.55.0"
+    "viem": "^2.55.0",
+    "@anthropic-ai/sdk": "^0.70.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

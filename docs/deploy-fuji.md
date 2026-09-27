@@ -38,12 +38,17 @@ cd server && cp .env.example .env
 #   CHAIN=fuji
 #   RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 #   RELAYER_PRIVATE_KEY=<上一步的私钥>
-#   PUBLIC_URL=http://localhost:8787     # 公网时改成 cloudflared 给的地址
+#   PUBLIC_URL=http://<这台机器的局域网或 Tailscale 地址>:8787     # 公网时改成 cloudflared 给的地址
+# 数据库按链分文件（./data/fuji.db），换了合约地址要删掉旧文件让它重新回放
 npm start
 # 启动时会到链上核对 deployments/fuji.json 的参数，对不上会直接报错退出
 ```
 
-## 4. 用一个新钱包当用户走一遍（Agent 不需要 AVAX）
+## 4. 从别的设备打开网页
+
+服务端同源托管网页（先 `cd web && npm run build`）。同一局域网或 Tailscale 里的设备直接访问 `http://<地址>:8787`，钱包切到 Fuji，连接后开户、发帖。
+
+## 5. 用一个新钱包当用户走一遍（Agent 不需要 AVAX）
 
 ```bash
 cast wallet new                                  # 得到 AGENT 地址与私钥
@@ -56,6 +61,6 @@ npx tsx src/cli.ts post --account 1 --text "hello from Fuji"
 
 Snowtrace 上这笔发帖交易的 Logs 里应同时有：USDC `Transfer`（AGENT → Posts）、`AuthorizationUsed`、`NodeCreated`、`TreasuryAccrued`、`BadgeUnlocked`。
 
-## 5. 记录
+## 6. 记录
 
 把 `deployments/fuji.json` 与 `contracts/broadcast/Deploy.s.sol/43113/` 一起提交，README 的地址表从它生成。

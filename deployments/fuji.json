@@ -1,0 +1,20 @@
+{
+  "chainId": 43113,
+  "network": "eip155:43113",
+  "usdc": "0x5425890298aed601595a70AB815c96711a31Bc65",
+  "account": "0xfe994403826dfb35eb3194362e32a2ecc4c9973c",
+  "posts": "0x053ade3e020d20659d29615b715877587c921b3a",
+  "voucher": null,
+  "deployBlock": 58782680,
+  "deployTx": "0x0fce48c3abc148bf0dba64293377b5aaaaee3b0488e3bcd47d46e78fe5b2df76",
+  "deployedAt": "2026-09-27T20:03:36+09:00",
+  "params": {
+    "mintFee": "1000000",
+    "post": "500000",
+    "reply": "200000",
+    "repost": "200000",
+    "like": "50000",
+    "treasuryBps": 1000,
+    "maxDepth": 6
+  }
+}

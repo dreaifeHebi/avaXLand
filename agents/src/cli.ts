@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./env";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex } from "viem";
 import { createClient, viemSigner } from "@avaxland/client";
@@ -11,7 +11,7 @@ import { Kind, type ConfigDTO } from "@avaxland/protocol";
  *   tsx src/cli.ts reply --account 1 --parent 3 --text "..."
  *   tsx src/cli.ts repost --account 1 --parent 3 [--text ""]
  *   tsx src/cli.ts like  --account 1 --node 3
- * 环境变量：SERVER_URL、AGENT_KEY（或 --key-env 指定别的变量名）
+ * 环境变量：SERVER_URL、AGENT_KEY（或 --key-env 指定别的变量名）；ENV_FILE 选择环境文件（默认 .env）
  */
 function arg(name: string, fallback?: string): string {
   const i = process.argv.indexOf(`--${name}`);

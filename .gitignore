@@ -1,15 +1,18 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 *.db
 *.db-wal
 *.db-shm
 contracts/out/
 contracts/cache/
-agents/state.json
+agents/state.*.json
 .DS_Store
 # 本地 anvil 的部署产物每次都不一样，不入库；Fuji 的 broadcast 与 deployments/fuji.json 入库作为证据
 deployments/local.json
 contracts/broadcast/*/31337/
 server/data/
 e2e/shots/
+contracts/broadcast/*/*/dry-run/

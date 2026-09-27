@@ -27,7 +27,9 @@ contract Deploy is Script {
         });
 
         vm.startBroadcast();
-        address owner = msg.sender;
+        // 广播者地址（--account / --private-key 对应的钱包）。不能用 msg.sender：keystore 签名时它仍是 forge 的默认地址
+        (, address owner,) = vm.readCallers();
+        owner = vm.envOr("OWNER", owner);
 
         if (usdcAddr == address(0)) {
             MockUSDC mock = new MockUSDC();

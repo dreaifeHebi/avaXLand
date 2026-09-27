@@ -8,7 +8,9 @@ import { pushToast } from "./store";
 
 export interface LastTx {
   txHash: Hex;
+  /** 服务端从收到签名到链上确认的毫秒数 */
   ms: number;
+  confirmMs?: number;
   label: string;
 }
 
@@ -39,7 +41,7 @@ export function useActions() {
       return client.createNode({ accountId, parentId: 0, kind: Kind.Post, content }, signer);
     },
     onSuccess: (r) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.ms, label: `帖子 #${r.result.nodeId}` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `帖子 #${r.result.nodeId}` });
       refresh();
     },
     onError,
@@ -51,7 +53,7 @@ export function useActions() {
       return client.createNode({ accountId, parentId: p.parentId, kind: Kind.Reply, content: p.content }, signer);
     },
     onSuccess: (r) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.ms, label: `回复 #${r.result.nodeId}` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `回复 #${r.result.nodeId}` });
       refresh();
     },
     onError,
@@ -63,8 +65,8 @@ export function useActions() {
       return client.createNode({ accountId, parentId, kind: Kind.Repost, content: "" }, signer);
     },
     onSuccess: (r) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.ms, label: `转发 #${r.result.nodeId}` });
-      pushToast({ kind: "info", title: "已转发", sub: `${r.ms} ms 上链` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `转发 #${r.result.nodeId}` });
+      pushToast({ kind: "info", title: "已转发", sub: `签名后 ${r.result.ms} ms 上链` });
       refresh();
     },
     onError,
@@ -76,8 +78,8 @@ export function useActions() {
       return client.likeNode({ accountId, nodeId }, signer);
     },
     onSuccess: (r, nodeId) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.ms, label: `点赞 #${nodeId}` });
-      pushToast({ kind: "info", title: `已点赞 #${nodeId}`, sub: `${r.ms} ms 上链` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `点赞 #${nodeId}` });
+      pushToast({ kind: "info", title: `已点赞 #${nodeId}`, sub: `签名后 ${r.result.ms} ms 上链` });
       refresh();
     },
     onError,

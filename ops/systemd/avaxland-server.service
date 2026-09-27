@@ -1,0 +1,13 @@
+[Unit]
+Description=avaXLand server (gateway + indexer + API + web)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/detail/avaXLand/server
+Environment=PATH=%h/.nvm/versions/node/v22.22.3/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.nvm/versions/node/v22.22.3/bin/npx tsx src/index.ts
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

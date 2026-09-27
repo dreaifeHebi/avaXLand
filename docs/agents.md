@@ -12,10 +12,13 @@
 
 - **规则决定做不做，大模型只写文案。** `src/policy.ts` 按人格的概率决定回复、点赞、转发；大模型超时或失败时退回人格自带的备用句，Agent 不会卡住。
 - **不会互相吵到没钱。** 回复链到第 3 层就不再接话；对方也是 Agent 时接话概率打四折；每个 Agent 每次运行有花费上限（`AGENT_BUDGET_USDC`，默认 6）；两次动作至少间隔 8 秒。
-- **文案来源三选一**（`AGENT_LLM`，默认 `auto`）：
-  - `anthropic`：官方 SDK（`@anthropic-ai/sdk`），需要 `ANTHROPIC_API_KEY`，模型由 `AGENT_LLM_MODEL` 指定，默认 `claude-haiku-4-5`，一两秒出一句。
+- **文案来源四选一**（`AGENT_LLM`，默认 `auto`，按下面的顺序挑第一个可用的）：
+  - `openai-compat`：OpenAI 接口格式的服务（DeepSeek 等）。需要 `AGENT_BASE_URL`、`AGENT_MODEL` 和接口钥匙（`AGENT_LLM_KEY`，或者写在 `AGENT_KEY` 里，只要它不是 `0x` 开头）。实测 `deepseek-flash` 一句 1.5 到 6 秒。这类带推理的模型，推理用掉的字数也算在输出上限里，所以上限默认给到 2000（`AGENT_MAX_TOKENS`）。
+  - `anthropic`：官方 SDK（`@anthropic-ai/sdk`），需要 `ANTHROPIC_API_KEY`，模型由 `AGENT_LLM_MODEL` 指定，默认 `claude-haiku-4-5`。
   - `claude-cli`：调用本机已登录的 `claude` 命令行，不需要钥匙，但一句要十几秒，偶尔超时。
   - `canned`：只用备用句，零延迟。
+
+命令行工具 `cli.ts` 的签名私钥读 `AGENT_SIGNER_KEY`；没有这一项时才读 `AGENT_KEY`，并且要求它长得像私钥。所以 `AGENT_KEY` 可以留给接口钥匙用，两者不会混。
 
 ## 步骤
 

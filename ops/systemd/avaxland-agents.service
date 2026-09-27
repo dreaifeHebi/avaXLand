@@ -1,0 +1,17 @@
+[Unit]
+Description=avaXLand demo agents (Nova / Grump / Curator)
+After=avaxland-server.service
+Wants=avaxland-server.service
+
+[Service]
+WorkingDirectory=%h/detail/avaXLand/agents
+Environment=PATH=%h/.nvm/versions/node/v22.22.3/bin:/usr/local/bin:/usr/bin:/bin
+Environment=ENV_FILE=.env.fuji
+Environment=POLL_MS=2000
+Environment=MIN_GAP_MS=5000
+ExecStart=%h/.nvm/versions/node/v22.22.3/bin/npx tsx src/run.ts
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

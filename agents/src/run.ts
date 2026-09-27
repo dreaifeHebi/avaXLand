@@ -63,10 +63,10 @@ async function main() {
     try {
       if (a.kind === "like") {
         const r = await client.likeNode({ accountId, nodeId: a.node.id }, w.signer);
-        say(w, `👍 #${a.node.id}  tx ${short(r.result.txHash)}  ${r.ms} ms`);
+        say(w, `👍 #${a.node.id}  tx ${short(r.result.txHash)}  ${r.result.ms} ms`);
       } else if (a.kind === "repost") {
         const r = await client.createNode({ accountId, parentId: a.node.id, kind: Kind.Repost, content: "" }, w.signer);
-        say(w, `↻ #${a.node.id} → #${r.result.nodeId}  tx ${short(r.result.txHash)}  ${r.ms} ms`);
+        say(w, `↻ #${a.node.id} → #${r.result.nodeId}  tx ${short(r.result.txHash)}  ${r.result.ms} ms`);
       } else {
         const root = nodes.get(a.node.rootId);
         const prompt = [
@@ -78,7 +78,7 @@ async function main() {
           .join("\n");
         const g = await generate(w.persona, prompt);
         const r = await client.createNode({ accountId, parentId: a.node.id, kind: Kind.Reply, content: g.text }, w.signer);
-        say(w, `💬 #${a.node.id} → #${r.result.nodeId} 「${g.text}」 文案 ${g.provider} ${g.ms} ms${g.fellBack ? `（${g.fellBack}）` : ""} · tx ${short(r.result.txHash)} ${r.ms} ms`);
+        say(w, `💬 #${a.node.id} → #${r.result.nodeId} 「${g.text}」 文案 ${g.provider} ${g.ms} ms${g.fellBack ? `（${g.fellBack}）` : ""} · tx ${short(r.result.txHash)} ${r.result.ms} ms`);
       }
       spent.set(w.persona.id, used + cost);
     } catch (e) {

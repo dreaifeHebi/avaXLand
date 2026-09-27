@@ -21,7 +21,8 @@ export function TxLink({ hash, label }: { hash: string; label?: string }) {
 export function TxLine({ tx }: { tx: LastTx }) {
   return (
     <div className="txline small">
-      <span className="ok">✓ 已上链</span> {tx.label} · <b>{tx.ms} ms</b> · <TxLink hash={tx.txHash} />
+      <span className="ok">✓ 已上链</span> {tx.label} · 签名后 <b>{(tx.ms / 1000).toFixed(1)} 秒</b>
+      {tx.confirmMs !== undefined ? <span className="muted">（其中等出块 {(tx.confirmMs / 1000).toFixed(1)} 秒）</span> : null} · <TxLink hash={tx.txHash} />
     </div>
   );
 }

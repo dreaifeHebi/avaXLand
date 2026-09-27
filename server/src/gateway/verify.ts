@@ -1,12 +1,7 @@
 import { isAddress, recoverTypedDataAddress, type Address, type Hex } from "viem";
-import {
-  accountAbi,
-  receiveWithAuthorizationTypedData,
-  usdcAbi,
-  type PaymentPayload,
-  type RejectReason,
-} from "@avaxland/protocol";
-import { deployment, getConfig, publicClient } from "../config";
+import { receiveWithAuthorizationTypedData, type PaymentPayload, type RejectReason } from "@avaxland/protocol";
+import { getConfig } from "../config";
+import type { PayerFacts } from "./chainreads";
 
 export interface VerifiedAuth {
   from: Address;
@@ -18,21 +13,16 @@ export interface VerifiedAuth {
 }
 
 export type Verified = { ok: true; auth: VerifiedAuth } | { ok: false; reason: RejectReason; detail?: string };
+export type Checked = { ok: true } | { ok: false; reason: RejectReason; detail?: string };
 
 const same = (a: string | undefined, b: string) => !!a && a.toLowerCase() === b.toLowerCase();
-const bad = (reason: RejectReason, detail?: string): Verified => ({ ok: false, reason, detail });
+const bad = (reason: RejectReason, detail?: string) => ({ ok: false as const, reason, detail });
 
 /**
- * 七步校验（顺序即优先级）：
- * 1 载荷形状 / 网络 / 币 / 收款方  2 金额  3 nonce == 服务端重算的意图哈希  4 有效期
- * 5 签名恢复出的地址 == from  6 from == 账号 NFT 持有人（开户时跳过）  7 nonce 未用过 && 余额够
+ * 校验分两段。第一段不碰链（纯本地计算）：
+ * 1 载荷形状 / 网络 / 币 / 收款方  2 金额  3 nonce == 服务端重算的意图哈希  4 有效期  5 签名恢复出的地址 == from
  */
-export async function verifyPayment(p: {
-  payload: PaymentPayload;
-  expectedAmount: bigint;
-  expectedNonce: Hex;
-  accountId?: bigint;
-}): Promise<Verified> {
+export async function verifyStatic(p: { payload: PaymentPayload; expectedAmount: bigint; expectedNonce: Hex }): Promise<Verified> {
   const cfg = getConfig();
   const a = p.payload?.payload?.authorization;
   const sig = p.payload?.payload?.signature;
@@ -70,23 +60,19 @@ export async function verifyPayment(p: {
     return bad("BAD_SIGNATURE");
   }
   if (!same(signer, a.from)) return bad("BAD_SIGNER", `recovered ${signer}`);
-
-  if (p.accountId !== undefined) {
-    let owner: Address;
-    try {
-      owner = await publicClient.readContract({ address: deployment.account, abi: accountAbi, functionName: "ownerOf", args: [p.accountId] });
-    } catch {
-      return bad("ACCOUNT_NOT_FOUND", `#${p.accountId}`);
-    }
-    if (!same(owner, a.from)) return bad("NOT_OWNER", `account #${p.accountId} is owned by ${owner}`);
-  }
-
-  const [used, balance] = await Promise.all([
-    publicClient.readContract({ address: cfg.addresses.usdc, abi: usdcAbi, functionName: "authorizationState", args: [a.from, a.nonce] }),
-    publicClient.readContract({ address: cfg.addresses.usdc, abi: usdcAbi, functionName: "balanceOf", args: [a.from] }),
-  ]);
-  if (used) return bad("NONCE_USED");
-  if (balance < value) return bad("INSUFFICIENT_BALANCE", `balance ${balance}, need ${value}`);
-
   return { ok: true, auth: { from: a.from, value, validAfter, validBefore, nonce: a.nonce, signature: sig } };
+}
+
+/**
+ * 第二段用一次并发读回来的链上事实判断：
+ * 6 from == 账号 NFT 持有人（开户时不查）  7 nonce 未用过 && 余额够
+ */
+export function verifyFacts(auth: VerifiedAuth, facts: PayerFacts, accountId?: bigint): Checked {
+  if (accountId !== undefined) {
+    if (facts.owner === null || facts.owner === undefined) return bad("ACCOUNT_NOT_FOUND", `#${accountId}`);
+    if (!same(facts.owner, auth.from)) return bad("NOT_OWNER", `account #${accountId} is owned by ${facts.owner}`);
+  }
+  if (facts.nonceUsed) return bad("NONCE_USED");
+  if (facts.balance < auth.value) return bad("INSUFFICIENT_BALANCE", `balance ${facts.balance}, need ${auth.value}`);
+  return { ok: true };
 }

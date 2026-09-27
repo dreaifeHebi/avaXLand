@@ -171,20 +171,27 @@ export async function payAndCall<T>(opts: ClientOptions, path: string, body: unk
   return { result: (await r2.json()) as T, settlement: sh ? decodeHeader<SettlementResponse>(sh) : null, ms: Date.now() - t0 };
 }
 
-export interface MintResult {
+/** 服务端从收到签名到链上确认的耗时：校验与模拟、发出交易、等待出块确认 */
+export interface Timing {
+  checkMs: number;
+  sendMs: number;
+  confirmMs: number;
+}
+interface Settled {
+  txHash: Hex;
+  /** 服务端总耗时（毫秒），不含用户在钱包里点签名的时间 */
+  ms: number;
+  timing?: Timing;
+  block?: number;
+  gasUsed?: string;
+}
+export interface MintResult extends Settled {
   accountId: number;
-  txHash: Hex;
-  ms: number;
 }
-export interface NodeResult {
+export interface NodeResult extends Settled {
   nodeId: number;
-  txHash: Hex;
-  ms: number;
 }
-export interface LikeResult {
-  txHash: Hex;
-  ms: number;
-}
+export type LikeResult = Settled;
 
 /** 便捷封装：网页、Agent、MCP 都用这一个 */
 export function createClient(opts: ClientOptions) {

@@ -34,7 +34,7 @@ async function main() {
     const r = await client.mintAccount({ to: w.address, name: `${w.persona.name}·${n}` }, w.signer);
     state.personas[w.persona.id]!.accountIds.push(r.result.accountId);
     saveState(cfg, state);
-    console.log(`开户 #${r.result.accountId} ${w.persona.name}·${n}  ${r.ms} ms`);
+    console.log(`开户 #${r.result.accountId} ${w.persona.name}·${n}  ${r.result.ms} ms`);
   };
 
   console.log(`帖子 #${nodeId} 现在 ${node.likes} 个赞；目标：再新增 ${count} 个赞`);
@@ -49,7 +49,7 @@ async function main() {
     liked.add(next.id);
     try {
       const r = await client.likeNode({ accountId: next.id, nodeId }, next.w.signer);
-      console.log(`👍 第 ${++done} 个  账号 #${next.id} (${next.w.persona.name})  tx ${short(r.result.txHash)}  ${r.ms} ms`);
+      console.log(`👍 第 ${++done} 个  账号 #${next.id} (${next.w.persona.name})  tx ${short(r.result.txHash)}  ${r.result.ms} ms`);
       await sleep(gap);
     } catch (e) {
       if (e instanceof PaymentRejected && e.reason === "NONCE_USED") continue; // 以前赞过，不算数

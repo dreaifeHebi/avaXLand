@@ -16,7 +16,8 @@
     "@avaxland/protocol": "*",
     "dotenv": "^16.4.7",
     "viem": "^2.55.0",
-    "@anthropic-ai/sdk": "^0.70.0"
+    "@anthropic-ai/sdk": "^0.70.0",
+    "openai": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

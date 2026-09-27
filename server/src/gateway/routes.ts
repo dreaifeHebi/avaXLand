@@ -2,13 +2,11 @@ import { Hono, type Context } from "hono";
 import { getAddress, isAddress, type Address, type Hex } from "viem";
 import {
   HEADERS,
-  accountAbi,
   buildNodeIntent,
   decodeHeader,
   encodeHeader,
   nonceForLike,
   nonceForMint,
-  postsAbi,
   randomSalt,
   type Kind,
   type PaymentPayload,
@@ -16,12 +14,13 @@ import {
   type RejectReason,
   type SettlementResponse,
 } from "@avaxland/protocol";
-import { deployment, getConfig, publicClient } from "../config";
+import { getConfig } from "../config";
 import type { Queries } from "../db/queries";
+import { accountTier, excerptLimit, nodeExists, payerFacts } from "./chainreads";
 import { paymentRequired } from "./intent";
 import { RateLimiter } from "./ratelimit";
-import { relay, type RelayOutcome } from "./relay";
-import { verifyPayment } from "./verify";
+import { estimate, sendAndConfirm, type RelayFn } from "./relay";
+import { verifyFacts, verifyStatic } from "./verify";
 
 const JSON_HEADERS = { "content-type": "application/json" };
 
@@ -33,16 +32,7 @@ function reject(c: Context, reason: RejectReason | string, detail?: string, stat
   return c.json({ error: reason, detail }, status as 400);
 }
 
-function relayError(c: Context, r: Extract<RelayOutcome, { ok: false }>) {
-  if (r.stage === "simulate") return reject(c, "SIMULATION_FAILED", r.reason);
-  return c.json({ error: "RELAY_FAILED", detail: r.reason, txHash: r.txHash }, 502);
-}
-
-function settled(c: Context, s: SettlementResponse, body: unknown) {
-  return c.body(JSON.stringify(body), 200, { ...JSON_HEADERS, [HEADERS.response]: encodeHeader(s) });
-}
-
-/** 读 PAYMENT-SIGNATURE 头；没有 → null（表示第一次请求，应回 402）；坏的 → "bad" */
+/** 读 PAYMENT-SIGNATURE 头；没有 → null（第一次请求，应回 402）；坏的 → "bad" */
 function readPayload(c: Context): PaymentPayload | null | "bad" {
   const h = c.req.header(HEADERS.signature);
   if (!h) return null;
@@ -55,12 +45,60 @@ function readPayload(c: Context): PaymentPayload | null | "bad" {
 
 const clientIp = (c: Context) => c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("cf-connecting-ip") || "local";
 
+/**
+ * 付款到上链的共同流程：
+ *   本地校验（不碰链）→ 并发：链上事实 + 估算 gas（兼作模拟执行，合并成一次往返）→ 发交易（一次往返）→ 轮询回执
+ * 返回里带各阶段耗时，网页和 Agent 日志直接显示。
+ */
+async function settle(
+  c: Context,
+  p: {
+    t0: number;
+    payload: PaymentPayload;
+    amount: bigint;
+    nonce: Hex;
+    accountId?: bigint;
+    fn: RelayFn;
+    args: (auth: { from: Address; value: bigint; validAfter: bigint; validBefore: bigint; nonce: Hex; signature: Hex }) => readonly unknown[];
+    beforeSend?: () => void;
+    body: (r: { nodeId?: number; accountId?: number }) => Record<string, unknown>;
+    afterConfirm?: (r: { nodeId?: number; accountId?: number }) => void;
+  },
+) {
+  const cfg = getConfig();
+  const v = await verifyStatic({ payload: p.payload, expectedAmount: p.amount, expectedNonce: p.nonce });
+  if (!v.ok) return reject(c, v.reason, v.detail);
+  const args = p.args(v.auth);
+
+  const [facts, est] = await Promise.all([payerFacts({ from: v.auth.from, nonce: v.auth.nonce, accountId: p.accountId }), estimate(p.fn, args)]);
+  const checked = verifyFacts(v.auth, facts, p.accountId);
+  if (!checked.ok) return reject(c, checked.reason, checked.detail);
+  if (!est.ok) return reject(c, "SIMULATION_FAILED", est.reason);
+  const checkMs = Date.now() - p.t0;
+
+  p.beforeSend?.();
+  const r = await sendAndConfirm(p.fn, args, est.gas);
+  if (!r.ok) return c.json({ error: "RELAY_FAILED", detail: r.reason, txHash: r.txHash }, 502);
+  p.afterConfirm?.(r);
+
+  const settlement: SettlementResponse = { success: true, transaction: r.txHash, network: cfg.network, payer: v.auth.from, amount: p.amount.toString() };
+  const body = {
+    ...p.body(r),
+    txHash: r.txHash,
+    ms: Date.now() - p.t0,
+    timing: { checkMs, sendMs: r.sendMs, confirmMs: r.confirmMs },
+    block: Number(r.receipt.blockNumber),
+    gasUsed: r.receipt.gasUsed.toString(),
+  };
+  return c.body(JSON.stringify(body), 200, { ...JSON_HEADERS, [HEADERS.response]: encodeHeader(settlement) });
+}
+
 export function createGateway(q: Queries) {
   const g = new Hono();
-  const limiter = new RateLimiter(60);
+  const limiter = new RateLimiter(120);
 
   g.use("*", async (c, next) => {
-    if (!limiter.allow(clientIp(c))) return reject(c, "RATE_LIMITED", undefined, 429);
+    if (c.req.method === "POST" && !limiter.allow(clientIp(c))) return reject(c, "RATE_LIMITED", undefined, 429);
     await next();
   });
 
@@ -72,8 +110,7 @@ export function createGateway(q: Queries) {
     const name = String(body?.name ?? "").trim();
     if (!isAddress(to ?? "") || name.length === 0 || name.length > 40) return reject(c, "BAD_REQUEST", "need to (address) and name (1-40 chars)");
     const toAddr = getAddress(to) as Address;
-    const cfg = getConfig();
-    const amount = BigInt(cfg.prices.mint);
+    const amount = BigInt(getConfig().prices.mint);
 
     const payload = readPayload(c);
     if (payload === "bad") return reject(c, "BAD_REQUEST", "PAYMENT-SIGNATURE header is not base64 JSON");
@@ -86,17 +123,18 @@ export function createGateway(q: Queries) {
     }
     const salt = payload.accepted?.extra?.binding?.salt;
     if (!salt) return reject(c, "BAD_REQUEST", "binding.salt missing");
-    const v = await verifyPayment({ payload, expectedAmount: amount, expectedNonce: nonceForMint(toAddr, salt) });
-    if (!v.ok) return reject(c, v.reason, v.detail);
-
-    const r = await relay("mintWithAuth", [toAddr, salt, v.auth]);
-    if (!r.ok) return relayError(c, r);
-    if (r.accountId) q.setAccountName.run({ id: r.accountId, owner: toAddr, name });
-    return settled(
-      c,
-      { success: true, transaction: r.txHash, network: cfg.network, payer: v.auth.from, amount: amount.toString() },
-      { accountId: r.accountId, txHash: r.txHash, ms: Date.now() - t0 },
-    );
+    return settle(c, {
+      t0,
+      payload,
+      amount,
+      nonce: nonceForMint(toAddr, salt),
+      fn: "mintWithAuth",
+      args: (auth) => [toAddr, salt, auth],
+      body: (r) => ({ accountId: r.accountId }),
+      afterConfirm: (r) => {
+        if (r.accountId) q.setAccountName.run({ id: r.accountId, owner: toAddr, name });
+      },
+    });
   });
 
   // ------------------------------------------------------------ 发帖 / 回复 / 转发
@@ -119,20 +157,11 @@ export function createGateway(q: Queries) {
     const cfg = getConfig();
     const amount = BigInt(kind === 0 ? cfg.prices.post : kind === 1 ? cfg.prices.reply : cfg.prices.repost);
 
-    // 父节点是否存在：以链为准（索引器可能还没追上）
-    if (parentId) {
-      const count = await publicClient.readContract({ address: deployment.posts, abi: postsAbi, functionName: "nodeCount" });
-      if (BigInt(parentId) > count) return reject(c, "PARENT_NOT_FOUND", `#${parentId}`);
-    }
-    // 账号存在？等级决定摘要上限
-    let tier: number;
-    try {
-      await publicClient.readContract({ address: deployment.account, abi: accountAbi, functionName: "ownerOf", args: [BigInt(accountId)] });
-      tier = await publicClient.readContract({ address: deployment.account, abi: accountAbi, functionName: "tierOf", args: [BigInt(accountId)] });
-    } catch {
-      return reject(c, "ACCOUNT_NOT_FOUND", `#${accountId}`);
-    }
-    const maxBytes = Number(await publicClient.readContract({ address: deployment.posts, abi: postsAbi, functionName: "maxExcerptBytes", args: [tier] }));
+    // 父节点存在吗、账号等级是多少：多数情况下命中缓存，不碰链
+    const [parentOk, tier] = await Promise.all([parentId ? nodeExists(parentId) : Promise.resolve(true), accountTier(accountId)]);
+    if (!parentOk) return reject(c, "PARENT_NOT_FOUND", `#${parentId}`);
+    if (tier === null) return reject(c, "ACCOUNT_NOT_FOUND", `#${accountId}`);
+    const maxBytes = await excerptLimit(tier);
 
     const payload = readPayload(c);
     if (payload === "bad") return reject(c, "BAD_REQUEST", "PAYMENT-SIGNATURE header is not base64 JSON");
@@ -160,18 +189,18 @@ export function createGateway(q: Queries) {
         }),
       );
     }
-    const v = await verifyPayment({ payload, expectedAmount: amount, expectedNonce: intent.nonce, accountId: BigInt(accountId) });
-    if (!v.ok) return reject(c, v.reason, v.detail);
-
-    // 全文先落库（键 = 全文哈希），交易成功后索引器按哈希关联
-    q.putPendingContent.run(intent.contentHash, content, Math.floor(Date.now() / 1000));
-    const r = await relay("createWithAuth", [BigInt(accountId), BigInt(parentId), kind, intent.excerpt, intent.contentHash, salt, v.auth]);
-    if (!r.ok) return relayError(c, r);
-    return settled(
-      c,
-      { success: true, transaction: r.txHash, network: cfg.network, payer: v.auth.from, amount: amount.toString() },
-      { nodeId: r.nodeId, txHash: r.txHash, ms: Date.now() - t0 },
-    );
+    return settle(c, {
+      t0,
+      payload,
+      amount,
+      nonce: intent.nonce,
+      accountId: BigInt(accountId),
+      fn: "createWithAuth",
+      args: (auth) => [BigInt(accountId), BigInt(parentId), kind, intent.excerpt, intent.contentHash, salt, auth],
+      // 全文先落库（键 = 全文哈希），交易成功后索引器按哈希关联
+      beforeSend: () => q.putPendingContent.run(intent.contentHash, content, Math.floor(Date.now() / 1000)),
+      body: (r) => ({ nodeId: r.nodeId }),
+    });
   });
 
   // ------------------------------------------------------------ 点赞
@@ -182,10 +211,8 @@ export function createGateway(q: Queries) {
     const accountId = Number(body?.accountId);
     if (!Number.isInteger(nodeId) || nodeId <= 0) return reject(c, "BAD_REQUEST", "node id");
     if (!Number.isInteger(accountId) || accountId <= 0) return reject(c, "BAD_REQUEST", "accountId");
-    const cfg = getConfig();
-    const amount = BigInt(cfg.prices.like);
-    const count = await publicClient.readContract({ address: deployment.posts, abi: postsAbi, functionName: "nodeCount" });
-    if (BigInt(nodeId) > count) return reject(c, "NODE_NOT_FOUND", `#${nodeId}`);
+    const amount = BigInt(getConfig().prices.like);
+    if (!(await nodeExists(nodeId))) return reject(c, "NODE_NOT_FOUND", `#${nodeId}`);
     const nonce = nonceForLike(BigInt(accountId), BigInt(nodeId));
 
     const payload = readPayload(c);
@@ -193,15 +220,16 @@ export function createGateway(q: Queries) {
     if (!payload) {
       return respond402(c, paymentRequired({ path: `/nodes/${nodeId}/like`, description: `like #${nodeId}`, amount, binding: { nonce, accountId, nodeId } }));
     }
-    const v = await verifyPayment({ payload, expectedAmount: amount, expectedNonce: nonce, accountId: BigInt(accountId) });
-    if (!v.ok) return reject(c, v.reason, v.detail);
-    const r = await relay("likeWithAuth", [BigInt(accountId), BigInt(nodeId), v.auth]);
-    if (!r.ok) return relayError(c, r);
-    return settled(
-      c,
-      { success: true, transaction: r.txHash as Hex, network: cfg.network, payer: v.auth.from, amount: amount.toString() },
-      { txHash: r.txHash, ms: Date.now() - t0 },
-    );
+    return settle(c, {
+      t0,
+      payload,
+      amount,
+      nonce,
+      accountId: BigInt(accountId),
+      fn: "likeWithAuth",
+      args: (auth) => [BigInt(accountId), BigInt(nodeId), auth],
+      body: () => ({}),
+    });
   });
 
   return g;

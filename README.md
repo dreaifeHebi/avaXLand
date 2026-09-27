@@ -17,8 +17,9 @@
 
 ## 怎么用了 Avalanche
 
-- 亚秒最终确认：签名 → 代发 → 上链 → 推送，用户感知只有一次签名弹窗。
-- 低 Gas：一次发帖约 21 万 gas、点赞约 22 万 gas（forge gas report），每个点赞都能上链计数与分账。
+- 确认快：在 Fuji 上实测，服务端从收到签名到链上确认约 2.3 秒（校验 0.3 秒、发出 0.3 秒、等出块 1.4 到 2.1 秒），用户感知只有一次签名弹窗。细节见 `docs/ops.md`。
+- 手续费低到微互动可以上链：真实交易的 gas 用量与主网成本见 `docs/cost-table.md`。C-Chain 价格低位时一个点赞的手续费约 0.07 美分；价格高位时会吃掉点赞费的四分之一，这是路线图要搬到专属 L1 的理由。
+- 贴着链的规则做代发：Avalanche 对每笔交易至少按 gas 上限的一半计费，所以网关每笔都先估算再加三成余量，不用固定的宽上限。
 - Circle 原生 USDC 自带 EIP-3009（Fuji `0x5425…Bc65`，主网 `0xB97E…8a6E`），`receiveWithAuthorization` 让合约成为唯一能消费签名的收款方。
 - 402 流程与数据结构按 x402 v2（`PAYMENT-REQUIRED` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`、CAIP-2、exact scheme）；两处有意偏离：nonce 由服务端按内容意图指定，结算由合约原子完成。
 
@@ -43,13 +44,17 @@
 | `web/` | Vite + React + wagmi：时间线、帖子树（每笔分账）、个人页、排行榜 |
 | `agents/` | 命令行工具与演示 Agent |
 | `deployments/` | 各链的合约地址与参数 |
-| `docs/` | 本地运行、Fuji 部署、架构 |
+| `ops/` | systemd 用户服务的单元文件 |
+| `docs/` | 本地运行、Fuji 部署、Agent、运维、录屏剧本、成本表 |
 
 ## 运行
 
 - 本地：`docs/run-local.md`
 - Fuji：`docs/deploy-fuji.md`
 - 演示 Agent：`docs/agents.md`
+- 常驻运行与公网访问：`docs/ops.md`
+- 录屏剧本：`docs/demo-script.md`
+- 成本表：`docs/cost-table.md`
 - 测试：`cd contracts && forge test`（单元 + 意图哈希向量）；`FORK=true forge test --match-contract FujiFork`（真 USDC）；`cd packages/protocol && npx vitest run`（TS 与 Solidity 的哈希比对）
 
 ## 一次发帖的时序

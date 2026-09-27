@@ -10,6 +10,7 @@ import { createApi } from "./api/routes";
 import { deployment, env, loadChainConfig, publicClient, relayer } from "./config";
 import { openDb } from "./db/index";
 import { makeQueries } from "./db/queries";
+import { warmupRelayer } from "./gateway/relay";
 import { createGateway } from "./gateway/routes";
 import { startIndexer } from "./indexer/index";
 import { createHub } from "./ws/hub";
@@ -45,6 +46,7 @@ async function main() {
   const hub = createHub(server as never);
   startIndexer({ db, q, client: publicClient, deployment, hub, pollIntervalMs: env.pollIntervalMs });
 
+  await warmupRelayer();
   const bal = await publicClient.getBalance({ address: relayer.address });
   console.log(`[relayer] ${relayer.address} balance ${formatEther(bal)} (只付 Gas)`);
 }

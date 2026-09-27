@@ -36,7 +36,7 @@ async function main() {
       const name = n === 1 ? w.persona.name : `${w.persona.name}·${n}`;
       const r = await client.mintAccount({ to: w.address, name }, w.signer);
       ids.push(r.result.accountId);
-      console.log(`  开户 #${r.result.accountId} ${name}  tx ${r.result.txHash}  ${r.ms} ms`);
+      console.log(`  开户 #${r.result.accountId} ${name}  tx ${r.result.txHash}  ${r.result.ms} ms`);
     }
     bal = await usdcBalance(cfg, w.address);
     state.personas[w.persona.id] = { address: w.address, accountIds: ids };

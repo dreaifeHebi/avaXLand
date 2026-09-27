@@ -1,0 +1,11 @@
+[Unit]
+Description=avaXLand public tunnel (cloudflared quick tunnel to :8787)
+After=avaxland-server.service
+
+[Service]
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --url http://localhost:8787
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,9 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import type { Persona } from "./persona/index";
 
-export type Provider = "anthropic" | "claude-cli" | "canned";
+export type Provider = "openai-compat" | "anthropic" | "claude-cli" | "canned";
+
+// OpenAI 接口格式的服务（DeepSeek 等）：AGENT_BASE_URL + AGENT_MODEL + 钥匙
+const OAI_BASE = process.env.AGENT_BASE_URL;
+const OAI_MODEL = process.env.AGENT_MODEL ?? "deepseek-chat";
+/** 接口钥匙放在 AGENT_LLM_KEY，或者 AGENT_KEY（只要它不是 0x 开头的签名私钥） */
+function oaiKey(): string | undefined {
+  const k = process.env.AGENT_LLM_KEY ?? process.env.AGENT_KEY;
+  return k && !k.startsWith("0x") ? k : undefined;
+}
 
 const MODEL = process.env.AGENT_LLM_MODEL ?? "claude-haiku-4-5";
 const CLI_MODEL = process.env.AGENT_CLI_MODEL ?? "haiku";
@@ -16,13 +26,36 @@ function hasClaudeCli(): boolean {
   return cliChecked;
 }
 
-/** auto：有 API 凭据用官方 SDK；否则本机有 claude 命令行就用它；都没有就用备用句 */
+/** auto：配了 OpenAI 格式接口就用它；否则有 Anthropic 凭据用官方 SDK；否则本机有 claude 命令行就用它；都没有就用备用句 */
 export function pickProvider(): Provider {
   const forced = process.env.AGENT_LLM;
-  if (forced === "anthropic" || forced === "claude-cli" || forced === "canned") return forced;
+  if (forced === "openai-compat" || forced === "anthropic" || forced === "claude-cli" || forced === "canned") return forced;
+  if (OAI_BASE && oaiKey()) return "openai-compat";
   if (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) return "anthropic";
   if (hasClaudeCli()) return "claude-cli";
   return "canned";
+}
+
+let oai: OpenAI | null = null;
+
+async function viaOpenAICompat(system: string, prompt: string, timeoutMs: number): Promise<string> {
+  const apiKey = oaiKey();
+  if (!OAI_BASE || !apiKey) throw new Error("AGENT_BASE_URL 或接口钥匙未设置");
+  oai ??= new OpenAI({ apiKey, baseURL: OAI_BASE });
+  const res = await oai.chat.completions.create(
+    {
+      model: OAI_MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: prompt },
+      ],
+      // 带推理的模型（如 deepseek-flash）推理用掉的字数也算在这个上限里，给足余量
+      max_tokens: Number(process.env.AGENT_MAX_TOKENS ?? 2000),
+      temperature: 0.9,
+    },
+    { timeout: timeoutMs, maxRetries: 0 },
+  );
+  return res.choices[0]?.message?.content ?? "";
 }
 
 let client: Anthropic | null = null;
@@ -75,6 +108,7 @@ function clean(text: string): string {
 }
 
 function describe(e: unknown): string {
+  if (e instanceof OpenAI.APIError) return `api error ${e.status ?? ""} ${e.message}`.trim().slice(0, 160);
   if (e instanceof Anthropic.RateLimitError) return "rate limited (429)";
   if (e instanceof Anthropic.AuthenticationError) return "authentication failed (401)";
   if (e instanceof Anthropic.APIConnectionError) return "connection error";
@@ -100,9 +134,15 @@ export async function generate(persona: Persona, prompt: string): Promise<Genera
   const t0 = Date.now();
   if (provider === "canned") return { text: canned(persona), provider, ms: 0 };
   const system = `${persona.system}\n${RULES}`;
+  const once = () =>
+    provider === "openai-compat"
+      ? viaOpenAICompat(system, prompt, 15_000)
+      : provider === "anthropic"
+        ? viaAnthropic(system, prompt, 8_000)
+        : viaClaudeCli(system, prompt, 40_000);
   try {
-    const raw = provider === "anthropic" ? await viaAnthropic(system, prompt, 8_000) : await viaClaudeCli(system, prompt, 40_000);
-    const text = clean(raw);
+    let text = clean(await once());
+    if (!text && provider !== "claude-cli") text = clean(await once()); // 空内容再试一次
     if (!text) throw new Error("empty output");
     return { text, provider, ms: Date.now() - t0 };
   } catch (e) {

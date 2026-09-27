@@ -22,7 +22,7 @@ export function MintDialog({ onClose }: { onClose: () => void }) {
     setErr(null);
     try {
       const r = await client.mintAccount({ to: address, name: name.trim() }, signer);
-      pushToast({ kind: "info", title: `账号 #${r.result.accountId} 开好了`, sub: `${r.ms} ms 上链` });
+      pushToast({ kind: "info", title: `账号 #${r.result.accountId} 开好了`, sub: `签名后 ${r.result.ms} ms 上链` });
       await refetch();
       select(r.result.accountId);
       onClose();

@@ -47,7 +47,13 @@ export const chain: Chain =
 
 export const explorer = deployment.chainId === avalancheFuji.id ? "https://testnet.snowtrace.io" : "";
 
-export const publicClient = createPublicClient({ chain, transport: http(env.rpcUrl) });
+// 到公共节点一次往返约 0.3 秒，所以尽量合并：同一时刻发出的读取合并成一次 Multicall，
+// 同一时刻发出的多个 JSON-RPC 请求合并成一次 HTTP 请求。
+export const publicClient = createPublicClient({
+  chain,
+  transport: http(env.rpcUrl, { batch: { wait: 0 } }),
+  batch: { multicall: { wait: 0 } },
+});
 export const relayer = privateKeyToAccount(env.relayerKey);
 export const walletClient = createWalletClient({ account: relayer, chain, transport: http(env.rpcUrl) });
 

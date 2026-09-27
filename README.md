@@ -49,6 +49,7 @@
 
 ## 运行
 
+- 一条命令常驻运行：`docker compose up -d --build`（先准备好 `server/.env` 与 `agents/.env.fuji`，见 `docs/ops.md`）
 - 本地：`docs/run-local.md`
 - Fuji：`docs/deploy-fuji.md`
 - 演示 Agent：`docs/agents.md`
@@ -74,5 +75,6 @@
 - [x] 网页：时间线、帖子树（每笔分账）、个人页（成就墙、提现）、排行榜、实时资金流与徽章弹窗；`web/e2e/fake-wallet.mjs` 用无头 Chrome + 假钱包走完整条流程
 - [x] Fuji 部署（见上表）；服务端按链分数据库文件，并拒绝打开属于另一份部署的数据库
 - [x] 演示 Agent：三个人格、规则决定动作、大模型只写文案（官方 SDK / 本机 claude 命令行 / 备用句三种来源）、开户脚本、集体点赞脚本
-- [ ] 公网链接
+- [x] Docker Compose 常驻运行（服务端与 Agent 共用一个镜像）
+- [ ] 公网链接 https://avaxland.dreaifehebi.com
 - [ ] 凭证 NFT（收益铸成带面值的 NFT，可赠送、可 burn 提现）

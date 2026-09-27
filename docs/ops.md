@@ -1,8 +1,26 @@
 # 运维：让它一直跑着
 
-三个常驻进程：服务端、演示 Agent、（需要公网时）隧道。开发时直接在终端里跑；要长期在线就交给 systemd 的用户服务。
+两个常驻进程：服务端（网关、索引器、接口、托管网页）和演示 Agent。当前的部署方式是 Docker Compose。
 
-## 直接在终端里跑
+## Docker Compose（当前的部署方式）
+
+```bash
+docker compose up -d --build        # 构建镜像并启动 server 与 agents
+docker compose ps                   # server 应显示 healthy
+docker compose logs -f server       # 服务端日志
+docker compose logs -f agents       # Agent 日志：谁回复了什么、花了多久
+docker compose restart agents
+docker compose down                 # 停止；数据在宿主机目录里，不会丢
+```
+
+- **容器跑的是构建那一刻的代码快照。** 之后改代码不会影响正在运行的服务；要上线新代码就再执行一次 `docker compose up -d --build`。
+- **钥匙不进镜像。** 服务端读 `server/.env`，Agent 读 `agents/.env.fuji`，两个文件都被 `.gitignore` 和 `.dockerignore` 排除，由 Compose 在启动时注入。
+- **数据在宿主机上。** `server/data/` 是数据库（链上事件的抄本和帖子全文），`agents/data/` 记着每个 Agent 名下有哪些账号。
+- **重启策略是 `unless-stopped`。** 容器崩溃或机器重启后会自动起来，除非你手动停过它。
+- **容器里用普通用户运行**（uid 1000）。镜像构建时把复制进去的文件都改成归这个用户所有：宿主机如果用了严格的 umask，归 root 的文件在运行时会读不到。
+- Agent 容器通过服务名访问服务端（`http://server:8787`），不经过宿主机端口。
+
+## 开发时直接在终端里跑
 
 ```bash
 cd web && npm run build                 # 服务端同源托管打包后的网页
@@ -10,7 +28,7 @@ cd ../server && npx tsx src/index.ts    # 读 server/.env：CHAIN、RPC_URL、RE
 cd ../agents && ENV_FILE=.env.fuji npx tsx src/run.ts
 ```
 
-## 交给 systemd（用户服务，不需要 root）
+## 不用 Docker 时：交给 systemd（用户服务，不需要 root）
 
 ```bash
 mkdir -p ~/.config/systemd/user
@@ -26,15 +44,19 @@ loginctl enable-linger "$USER"                  # 退出登录后也继续运行
 
 ## 从别的设备访问
 
-- 局域网或 Tailscale：`http://<这台机器的地址>:8787`，`server/.env` 里的 `PUBLIC_URL` 写同一个地址。
-- 公网（提交要用）：
+- 局域网或 Tailscale：`http://<这台机器的地址>:8787`。
+- 公网：页面和接口同源，只开一个域名。在已有的 Cloudflare 隧道里加一条规则，把域名指到本机 8787 端口，`server/.env` 里的 `PUBLIC_URL` 写这个域名：
 
-```bash
-cloudflared tunnel --no-autoupdate --url http://localhost:8787
-# 输出里会有一个 https://<随机名>.trycloudflare.com，把它写进 server/.env 的 PUBLIC_URL 后重启服务端
+```yaml
+# /etc/cloudflared/config.yml，放在兜底的 http_status:404 之前
+  - hostname: avaxland.dreaifehebi.com
+    service: http://localhost:8787
 ```
 
-快速隧道每次重启地址都会变。要固定地址就用自己的域名建命名隧道，或者把 `ops/systemd/avaxland-tunnel.service` 也装上并保持不重启。
+还需要一条域名记录：CNAME，名称 `avaxland`，目标 `<隧道编号>.cfargotunnel.com`，开启代理。
+用 `cloudflared tunnel route dns` 建记录时，记录会写进本机凭据所绑定的那个域名；给别的域名建会拼成 `xxx.别的域名.绑定的域名`，这种情况要在 Cloudflare 后台手工建。
+
+- 没有自己的域名时可以用临时隧道：`cloudflared tunnel --no-autoupdate --url http://localhost:8787`，地址每次重启都会变。
 
 公网暴露之后谁都能请求网关。网关的保护：每个 IP 每分钟 120 次写请求；没有有效付款签名的请求不会发交易；代发钥匙里只有付手续费用的一点 AVAX。
 

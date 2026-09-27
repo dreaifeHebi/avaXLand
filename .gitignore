@@ -16,3 +16,4 @@ contracts/broadcast/*/31337/
 server/data/
 e2e/shots/
 contracts/broadcast/*/*/dry-run/
+agents/data/

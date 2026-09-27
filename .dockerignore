@@ -1,0 +1,15 @@
+.git
+**/node_modules
+web/dist
+web/e2e/shots
+server/data
+agents/data
+agents/state.*.json
+**/.env
+**/.env.*
+!**/.env.example
+contracts
+deployments/local.json
+docs
+ops
+*.md

@@ -65,7 +65,8 @@ export async function usdcBalance(cfg: ConfigDTO, address: Address): Promise<big
   return publicClientFor(cfg).readContract({ address: cfg.addresses.usdc, abi: usdcAbi, functionName: "balanceOf", args: [address] });
 }
 
-const statePath = (cfg: ConfigDTO) => resolve(process.cwd(), `state.${cfg.chainId}.json`);
+/** 状态文件放哪：默认当前目录；容器里用 STATE_DIR 指到挂载的卷 */
+const statePath = (cfg: ConfigDTO) => resolve(process.env.STATE_DIR ?? process.cwd(), `state.${cfg.chainId}.json`);
 
 export function loadState(cfg: ConfigDTO): AgentState {
   const p = statePath(cfg);

@@ -17,8 +17,16 @@ function oaiKey(): string | undefined {
 
 const MODEL = process.env.AGENT_LLM_MODEL ?? "claude-haiku-4-5";
 const CLI_MODEL = process.env.AGENT_CLI_MODEL ?? "haiku";
-const RULES =
+const REPLY_RULES =
   "你在一个每次发言都要付费的社交平台上发言。只输出发言正文本身：不超过 80 个字，使用原帖的语言，不加引号，不加话题标签，不提自己是 AI 或机器人，不复述原帖。";
+
+/** 主动发帖用的规则。price 是发一条帖子的价格，从服务端的配置里来 */
+export const postRules = (price: string) =>
+  `你在一个每次发言都要付费的社交平台上发一条新帖子，发一条要花 ${price} USDC，所以只说值得说的话。` +
+  "只输出帖子正文本身：中文不超过 100 个字，英文不超过 40 个词；只谈看法和问题，不编造数据、新闻和经历，不给投资建议，不加引号，不加话题标签，不加表情符号，不提自己是 AI 或机器人。";
+
+/** 帖子比回复长一点，截断的上限也放宽 */
+export const POST_MAX_CHARS = 280;
 
 let cliChecked: boolean | null = null;
 function hasClaudeCli(): boolean {
@@ -101,10 +109,10 @@ function viaClaudeCli(system: string, prompt: string, timeoutMs: number): Promis
   });
 }
 
-function clean(text: string): string {
+function clean(text: string, maxChars: number): string {
   let t = text.trim().replace(/\s*\n+\s*/g, " ");
   t = t.replace(/^["'「『“`]+|["'」』”`]+$/g, "").trim();
-  return [...t].slice(0, 200).join("");
+  return [...t].slice(0, maxChars).join("");
 }
 
 function describe(e: unknown): string {
@@ -124,16 +132,23 @@ export interface Generated {
   fellBack?: string;
 }
 
-export function canned(persona: Persona): string {
-  return persona.fallback[Math.floor(Math.random() * persona.fallback.length)]!;
-}
+const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)]!;
 
-/** 生成一条发言。任何失败都退回人格自带的备用句，保证 Agent 不会卡住。 */
-export async function generate(persona: Persona, prompt: string): Promise<Generated> {
+/**
+ * 生成一条发言。任何失败都退回备用句，保证 Agent 不会卡住。
+ * 默认写的是回复；主动发帖时传 rules（postRules）和 fallback（人格的备用帖子）。
+ */
+export async function generate(
+  persona: Persona,
+  prompt: string,
+  opts: { rules?: string; fallback?: string[]; maxChars?: number } = {},
+): Promise<Generated> {
   const provider = pickProvider();
   const t0 = Date.now();
-  if (provider === "canned") return { text: canned(persona), provider, ms: 0 };
-  const system = `${persona.system}\n${RULES}`;
+  const canned = () => pick(opts.fallback ?? persona.fallback);
+  const tidy = (t: string) => clean(t, opts.maxChars ?? 200);
+  if (provider === "canned") return { text: canned(), provider, ms: 0 };
+  const system = `${persona.system}\n${opts.rules ?? REPLY_RULES}`;
   const once = () =>
     provider === "openai-compat"
       ? viaOpenAICompat(system, prompt, 15_000)
@@ -141,11 +156,11 @@ export async function generate(persona: Persona, prompt: string): Promise<Genera
         ? viaAnthropic(system, prompt, 8_000)
         : viaClaudeCli(system, prompt, 40_000);
   try {
-    let text = clean(await once());
-    if (!text && provider !== "claude-cli") text = clean(await once()); // 空内容再试一次
+    let text = tidy(await once());
+    if (!text && provider !== "claude-cli") text = tidy(await once()); // 空内容再试一次
     if (!text) throw new Error("empty output");
     return { text, provider, ms: Date.now() - t0 };
   } catch (e) {
-    return { text: canned(persona), provider: "canned", ms: Date.now() - t0, fellBack: describe(e) };
+    return { text: canned(), provider: "canned", ms: Date.now() - t0, fellBack: describe(e) };
   }
 }

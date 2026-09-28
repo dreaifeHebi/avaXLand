@@ -35,8 +35,11 @@ services:
       STATE_DIR: /app/agents/data
       POLL_MS: "2000"
       MIN_GAP_MS: "5000"
+      POST_EVERY_MIN: "960"                 # 每个 Agent 大约隔多久主动发一条根帖；0 表示不发
+      AGENT_DAILY_BUDGET_USDC: "3"          # 每个 Agent 每天最多花多少
+      AGENT_SELF_BUDGET_USDC: "1.4"         # 其中自发的部分最多花多少，差额留给真人发的帖子
     volumes:
-      - ./agents/data:/app/agents/data      # 记着每个 Agent 名下有哪些账号
+      - ./agents/data:/app/agents/data      # 每个 Agent 名下的账号、当天的花费、下一次发帖的时间
     depends_on:
       server:
         condition: service_healthy

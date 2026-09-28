@@ -5,8 +5,10 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient, viemSigner, type Client, type Signer } from "@avaxland/client";
 import { usdcAbi, type ConfigDTO } from "@avaxland/protocol";
+import type { Spend } from "./budget";
 import { SERVER_URL, envKey } from "./env";
 import { PERSONAS, type Persona } from "./persona/index";
+import type { Schedule } from "./posting";
 
 export interface AgentWallet {
   persona: Persona;
@@ -20,6 +22,10 @@ export interface AgentState {
   posts: Address;
   personas: Record<string, { address: Address; accountIds: number[] }>;
   lastSeenId: number;
+  /** 每个人格当天花了多少，见 budget.ts */
+  spend?: Record<string, Spend>;
+  /** 每个人格主动发帖的排期，见 posting.ts */
+  posting?: Record<string, Schedule>;
 }
 
 export async function loadConfig(): Promise<ConfigDTO> {

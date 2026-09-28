@@ -3,15 +3,18 @@ import { useAccount } from "wagmi";
 import { useMyAccount } from "../lib/account";
 import { useActions } from "../lib/actions";
 import { art } from "../lib/art";
+import { USDC_FAUCET, useOnTestnet } from "../lib/faucet";
 import { byteLen, fmtUsdc } from "../lib/format";
 import { composeStore, useStore } from "../lib/store";
 import { useConfig } from "../lib/useConfig";
 import { Avatar } from "./Avatar";
+import { FaucetHint } from "./StartGuide";
 import { TxLine } from "./TxLink";
 
 /** 没连钱包的访客在时间线顶上看到的横幅：这是什么、每个动作多少钱 */
 function Hero() {
   const cfg = useConfig();
+  const onTestnet = useOnTestnet();
   const img = art("hero");
   const p = cfg.data?.prices;
   return (
@@ -28,6 +31,15 @@ function Hero() {
             <span>转发 {fmtUsdc(p.repost)}</span>
             <span>点赞 {fmtUsdc(p.like)} USDC</span>
           </div>
+        )}
+        {onTestnet && (
+          <p className="hero-try">
+            想亲手试试？连上钱包，去{" "}
+            <a href={USDC_FAUCET} target="_blank" rel="noreferrer">
+              Circle 水龙头
+            </a>{" "}
+            免费领测试 USDC（网络选 Avalanche Fuji），开户后就能发帖。
+          </p>
         )}
       </div>
     </section>
@@ -67,7 +79,12 @@ export function Composer({ kind, parentId, onDone, autoFocus, inline }: { kind: 
   };
 
   if (!isConnected) return kind === "post" ? <Hero /> : <div className="note small">连接钱包后就能回复，回复一次 {price} USDC。</div>;
-  if (!current) return <div className="note small">这个钱包还没有账号。点「开户」铸一个账号，之后就能发帖、回复、点赞。</div>;
+  if (!current)
+    return (
+      <div className="note small">
+        这个钱包还没有账号。点「开户」铸一个账号，之后就能发帖、回复、点赞。 <FaucetHint need={cfg.data?.prices.mint} />
+      </div>
+    );
 
   return (
     <div className={`composer ${kind} ${inline ? "inline" : ""}`}>

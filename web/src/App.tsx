@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { MintDialog } from "./components/MintDialog";
 import { Rail, TabBar, TopBar } from "./components/Nav";
 import { FlowTicker, SideFoot, StatsCard, TopEarners } from "./components/Sidebar";
+import { StartGuide } from "./components/StartGuide";
 import { Toasts } from "./components/Toasts";
 import { useMyAccount } from "./lib/account";
 import { useSocket } from "./lib/ws";
@@ -33,6 +34,7 @@ export default function App() {
         </main>
         <aside className="right">
           <StatsCard />
+          <StartGuide />
           <FlowTicker />
           <TopEarners />
           <SideFoot />

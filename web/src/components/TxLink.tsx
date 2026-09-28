@@ -1,11 +1,23 @@
 import type { LastTx } from "../lib/actions";
 import { shortHash } from "../lib/format";
 import { useConfig } from "../lib/useConfig";
+import { Icon } from "./Icons";
 
-export function TxLink({ hash, label }: { hash: string; label?: string }) {
+/** 指向区块浏览器的交易链接。icon 为真时只画一个小图标（信息流里用），完整哈希放在悬停提示里 */
+export function TxLink({ hash, label, icon }: { hash: string; label?: string; icon?: boolean }) {
   const cfg = useConfig();
   const explorer = cfg.data?.explorer;
   const text = label ?? shortHash(hash);
+  if (icon)
+    return explorer ? (
+      <a className="act tx" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer" title={`在区块浏览器里看这笔交易 ${hash}`} aria-label="链上交易">
+        <span className="ring">
+          <Icon name="external" />
+        </span>
+      </a>
+    ) : (
+      <span className="act tx" title={hash} />
+    );
   return explorer ? (
     <a className="tx small" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer" title={hash}>
       {text} ↗

@@ -85,6 +85,20 @@ export function createApi(q: Queries) {
     return c.json({ items: rows.map((r) => ({ id: r.id, name: r.name, owner: r.owner })) });
   });
 
+  /** 某个账号的全部发言（帖子、回复、转发），新的在前；回复和转发带上它指向的那条 */
+  api.get("/accounts/:id/nodes", (c) => {
+    const id = Number(c.req.param("id"));
+    const cursor = Number(c.req.query("cursor") ?? Number.MAX_SAFE_INTEGER);
+    const limit = Math.min(Number(c.req.query("limit") ?? 30), 100);
+    const rows = q.byAuthor.all(id, cursor, limit) as NodeRow[];
+    const items = rows.map((r) => toNodeDTO(q, r));
+    const parentIds = rows.filter((r) => r.parent_id !== 0).map((r) => r.parent_id);
+    const parents = new Map(q.nodesByIds([...new Set(parentIds)]).map((r) => [r.id, toNodeDTO(q, r)]));
+    for (const it of items) if (it.parentId !== 0) it.parent = parents.get(it.parentId) ?? null;
+    const page: FeedPage = { items, nextCursor: rows.length === limit ? rows[rows.length - 1]!.id : null };
+    return c.json(page);
+  });
+
   api.get("/accounts/:id", async (c) => {
     const id = Number(c.req.param("id"));
     const row = q.account.get(id) as import("../db/queries").AccountRow | undefined;

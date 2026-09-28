@@ -35,3 +35,7 @@ export function badgeText(metric: number, threshold: string): string {
   const label = METRIC_LABELS[metric] ?? `指标${metric}`;
   return metric === 7 ? `${label} ${fmtUsdc(threshold, 0)} USDC` : `${label} ×${threshold}`;
 }
+
+export function fullTime(ts: number): string {
+  return new Date(ts * 1000).toLocaleString("zh-CN", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}

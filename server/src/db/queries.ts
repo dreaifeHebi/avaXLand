@@ -104,6 +104,10 @@ export function makeQueries(db: DB) {
       `SELECT n.*, a.name AS author_name FROM nodes n LEFT JOIN accounts a ON a.id = n.author_id
        WHERE n.kind IN (0, 2) AND n.id < ? ORDER BY n.id DESC LIMIT ?`,
     ),
+    byAuthor: db.prepare(
+      `SELECT n.*, a.name AS author_name FROM nodes n LEFT JOIN accounts a ON a.id = n.author_id
+       WHERE n.author_id = ? AND n.id < ? ORDER BY n.id DESC LIMIT ?`,
+    ),
     feedSince: db.prepare(
       `SELECT n.*, a.name AS author_name FROM nodes n LEFT JOIN accounts a ON a.id = n.author_id
        WHERE n.id > ? ORDER BY n.id ASC LIMIT ?`,

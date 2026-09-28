@@ -22,7 +22,7 @@ export interface NodeDTO {
   reposts: number;
   /** 打在这个节点身上的互动，流给它作者的分账合计 */
   earned: Amount;
-  /** 仅 feed 里的转发条目：被转发的原帖 */
+  /** feed 里的转发条目、账号发言列表里的回复与转发：它指向的那一条 */
   parent?: NodeDTO | null;
 }
 

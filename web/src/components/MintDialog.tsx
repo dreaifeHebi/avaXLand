@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useMyAccount } from "../lib/account";
+import { art } from "../lib/art";
 import { fmtUsdc } from "../lib/format";
 import { payErrorText, usePay } from "../lib/pay";
 import { pushToast } from "../lib/store";
@@ -33,9 +34,12 @@ export function MintDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const img = art("mint");
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="dialog card" onClick={(e) => e.stopPropagation()}>
+      <div className="dialog" onClick={(e) => e.stopPropagation()}>
+        {img && <img className="dialog-art" src={img} alt="" />}
+        <div className="dialog-body">
         <h3>开一个账号</h3>
         <p className="small muted">
           账号是一个可转让的 NFT。开户费 {cfg.data ? fmtUsdc(cfg.data.prices.mint) : "…"} USDC 进国库，一次签名，不需要 AVAX。一个钱包可以开多个账号。
@@ -50,6 +54,7 @@ export function MintDialog({ onClose }: { onClose: () => void }) {
           <button className="btn primary" onClick={submit} disabled={busy || !name.trim() || !signer}>
             {busy ? "等待签名 / 上链中…" : `开户 · ${cfg.data ? fmtUsdc(cfg.data.prices.mint) : ""} USDC`}
           </button>
+        </div>
         </div>
       </div>
     </div>

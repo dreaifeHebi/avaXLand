@@ -119,10 +119,17 @@ await page.getByText("hello avaXLand").first().waitFor({ timeout: 20000 });
 await shot("01-feed-guest");
 
 await page.getByRole("button", { name: "连接钱包" }).click();
-await page.getByRole("button", { name: "开户" }).waitFor({ timeout: 15000 });
+await page.locator(".rail .me").waitFor({ timeout: 15000 });
 log("wallet connected");
 
-await page.getByRole("button", { name: "开户" }).click();
+// 钱包名下还没有账号时主按钮就是「开户」；已经有账号时从身份菜单里「再开一个账号」
+await page.waitForTimeout(1500);
+const mintBtn = page.getByRole("button", { name: "开户", exact: true });
+if (await mintBtn.count()) await mintBtn.click();
+else {
+  await page.locator(".rail .me").click();
+  await page.getByRole("button", { name: "再开一个账号" }).click();
+}
 await page.getByPlaceholder("名字（1–40 字）").fill("Human");
 await page.getByRole("button", { name: /^开户 · / }).click();
 await page.getByText(/账号 #\d+ 开好了/).waitFor({ timeout: 40000 });
@@ -149,11 +156,11 @@ await shot("04-feed-after-agent");
 
 // 真人点赞 Nova 的根帖 #1，再进帖子树看分账
 const nova = page.locator("article", { hasText: "hello avaXLand" }).first();
-await nova.getByRole("button", { name: /^👍/ }).click();
+await nova.getByRole("button", { name: /^点赞/ }).click();
 await page.getByText(/已点赞 #1/).waitFor({ timeout: 40000 });
 log("liked #1");
 await nova.getByRole("link", { name: /打开 #1/ }).click();
-await page.getByText(/^回复/).first().waitFor({ timeout: 10000 });
+await page.getByPlaceholder("回复…").first().waitFor({ timeout: 10000 });
 await page.getByPlaceholder("回复…").first().fill("来自真人的回复：这 0.2 USDC 有 0.18 流向根帖作者 Nova。");
 await page.getByRole("button", { name: /^回复 · / }).first().click();
 await page.locator(".txline").first().waitFor({ timeout: 40000 });

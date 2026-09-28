@@ -49,3 +49,6 @@ export function pushFlow(split: SplitDTO) {
 export function useStore<T>(store: { get: () => T; subscribe: (l: Listener) => () => void }): T {
   return useSyncExternalStore(store.subscribe, store.get);
 }
+
+/** 左侧「发帖」按钮按一次加一，时间线上的发帖框看到变化就把光标放进去 */
+export const composeStore = createStore(0);

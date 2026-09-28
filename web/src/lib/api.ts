@@ -44,6 +44,7 @@ export const api = {
   node: (id: number) => get<TreeDTO>(`/nodes/${id}`),
   nodeTree: (id: number) => get<TreeDTO>(`/nodes/${id}/tree`),
   account: (id: number) => get<AccountView>(`/accounts/${id}`),
+  accountNodes: (id: number, cursor?: number | null) => get<FeedPage>(`/accounts/${id}/nodes?limit=20${cursor ? `&cursor=${cursor}` : ""}`),
   accountsByOwner: (addr: string) => get<{ items: MyAccount[] }>(`/accounts/by-owner/${addr}`),
   leaderboard: (kind: "spent" | "received" | "earned") => get<{ kind: string; items: LeaderboardRow[] }>(`/leaderboard?kind=${kind}&limit=20`),
   flows: (limit = 20) => get<{ items: SplitDTO[] }>(`/flows?limit=${limit}`),

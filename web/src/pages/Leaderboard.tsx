@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { Avatar } from "../components/Avatar";
+import { PageHead } from "../components/PageHead";
 import { api } from "../lib/api";
 import { fmtUsdc } from "../lib/format";
 
@@ -14,35 +16,30 @@ export function LeaderboardPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
   const q = useQuery({ queryKey: ["leaderboard", tab.key], queryFn: () => api.leaderboard(tab.key), refetchInterval: 8000 });
   return (
-    <div className="card">
+    <>
+      <PageHead title="排行榜" sub={tab.hint} />
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t.key} className={`tab ${t.key === tab.key ? "active" : ""}`} onClick={() => setTab(t)}>
             {t.label}
           </button>
         ))}
-        <span className="small muted">{tab.hint}</span>
       </div>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>账号</th>
-            <th className="num">{tab.label}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(q.data?.items ?? []).map((r) => (
-            <tr key={r.accountId}>
-              <td>{r.rank}</td>
-              <td>
-                <Link to={`/a/${r.accountId}`}>{r.name ?? `#${r.accountId}`}</Link> <span className="muted small">#{r.accountId}</span>
-              </td>
-              <td className="num">{tab.money ? `${fmtUsdc(r.value)} USDC` : r.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <ol>
+        {(q.data?.items ?? []).map((r) => (
+          <li key={r.accountId}>
+            <Link to={`/a/${r.accountId}`} className="rank-row lg">
+              <span className={`rank-no ${r.rank <= 3 ? "top" : ""}`}>{r.rank}</span>
+              <Avatar id={r.accountId} name={r.name} />
+              <span className="rank-name">
+                <b>{r.name ?? `账号 #${r.accountId}`}</b>
+                <span className="small muted">#{r.accountId}</span>
+              </span>
+              <b className={tab.money ? "amt" : ""}>{tab.money ? `${fmtUsdc(r.value)} USDC` : r.value}</b>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </>
   );
 }

@@ -3,7 +3,8 @@ import { useState } from "react";
 import type { Hex } from "viem";
 import { Kind } from "@avaxland/protocol";
 import { useMyAccount } from "./account";
-import { usePay, payErrorText } from "./pay";
+import { usePay } from "./pay";
+import type { MessageKey } from "./i18n";
 import { pushToast } from "./store";
 
 export interface LastTx {
@@ -11,7 +12,8 @@ export interface LastTx {
   /** 服务端从收到签名到链上确认的毫秒数 */
   ms: number;
   confirmMs?: number;
-  label: string;
+  label: MessageKey;
+  id: number;
 }
 
 /** 四个付费动作，每个都是：请求 → 402 → 钱包签名 → 重发 → 链上确认。成功后延时刷新，等索引器追上。 */
@@ -28,12 +30,12 @@ export function useActions() {
   };
 
   const guard = () => {
-    if (!client || !signer) throw new Error("先连接钱包");
-    if (!current) throw new Error("先开一个账号");
+    if (!client || !signer) throw new Error("CONNECT_WALLET");
+    if (!current) throw new Error("CREATE_ACCOUNT");
     return { client, signer, accountId: current.id };
   };
 
-  const onError = (e: unknown) => pushToast({ kind: "error", title: payErrorText(e) }, 5000);
+  const onError = (e: unknown) => pushToast({ kind: "error", error: e }, 5000);
 
   const post = useMutation({
     mutationFn: async (content: string) => {
@@ -41,7 +43,7 @@ export function useActions() {
       return client.createNode({ accountId, parentId: 0, kind: Kind.Post, content }, signer);
     },
     onSuccess: (r) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `帖子 #${r.result.nodeId}` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: "tx.post", id: r.result.nodeId });
       refresh();
     },
     onError,
@@ -53,7 +55,7 @@ export function useActions() {
       return client.createNode({ accountId, parentId: p.parentId, kind: Kind.Reply, content: p.content }, signer);
     },
     onSuccess: (r) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `回复 #${r.result.nodeId}` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: "tx.reply", id: r.result.nodeId });
       refresh();
     },
     onError,
@@ -65,8 +67,8 @@ export function useActions() {
       return client.createNode({ accountId, parentId, kind: Kind.Repost, content: "" }, signer);
     },
     onSuccess: (r) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `转发 #${r.result.nodeId}` });
-      pushToast({ kind: "info", title: "已转发", sub: `签名后 ${r.result.ms} ms 上链` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: "tx.repost", id: r.result.nodeId });
+      pushToast({ kind: "info", title: { key: "tx.reposted" }, sub: { key: "tx.milliseconds", params: { ms: r.result.ms } } });
       refresh();
     },
     onError,
@@ -78,8 +80,8 @@ export function useActions() {
       return client.likeNode({ accountId, nodeId }, signer);
     },
     onSuccess: (r, nodeId) => {
-      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: `点赞 #${nodeId}` });
-      pushToast({ kind: "info", title: `已点赞 #${nodeId}`, sub: `签名后 ${r.result.ms} ms 上链` });
+      setLastTx({ txHash: r.result.txHash, ms: r.result.ms, confirmMs: r.result.timing?.confirmMs, label: "tx.like", id: nodeId });
+      pushToast({ kind: "info", title: { key: "tx.liked", params: { id: String(nodeId) } }, sub: { key: "tx.milliseconds", params: { ms: r.result.ms } } });
       refresh();
     },
     onError,

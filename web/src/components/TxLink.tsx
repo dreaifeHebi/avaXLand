@@ -1,16 +1,18 @@
+import { useFormat, shortHash } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import type { LastTx } from "../lib/actions";
-import { shortHash } from "../lib/format";
 import { useConfig } from "../lib/useConfig";
 import { Icon } from "./Icons";
 
 /** 指向区块浏览器的交易链接。icon 为真时只画一个小图标（信息流里用），完整哈希放在悬停提示里 */
 export function TxLink({ hash, label, icon }: { hash: string; label?: string; icon?: boolean }) {
+  const { t } = useI18n();
   const cfg = useConfig();
   const explorer = cfg.data?.explorer;
   const text = label ?? shortHash(hash);
   if (icon)
     return explorer ? (
-      <a className="act tx" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer" title={`在区块浏览器里看这笔交易 ${hash}`} aria-label="链上交易">
+      <a className="act tx" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer" title={t("tx.explorer", { hash })} aria-label={t("tx.onchain")}>
         <span className="ring">
           <Icon name="external" />
         </span>
@@ -31,10 +33,12 @@ export function TxLink({ hash, label, icon }: { hash: string; label?: string; ic
 
 /** 一次付费动作的结果行：做了什么、多少毫秒上链、交易号 */
 export function TxLine({ tx }: { tx: LastTx }) {
+  const { t } = useI18n();
+  const { number } = useFormat();
   return (
     <div className="txline small">
-      <span className="ok">✓ 已上链</span> {tx.label} · 签名后 <b>{(tx.ms / 1000).toFixed(1)} 秒</b>
-      {tx.confirmMs !== undefined ? <span className="muted">（其中等出块 {(tx.confirmMs / 1000).toFixed(1)} 秒）</span> : null} · <TxLink hash={tx.txHash} />
+      <span className="ok">{t("tx.confirmed")}</span> {t(tx.label, { id: String(tx.id) })} · {t("tx.afterSigning")} <b>{t("tx.seconds", { seconds: number(tx.ms / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</b>
+      {tx.confirmMs !== undefined ? <span className="muted">{t("tx.blockTime", { seconds: number(tx.confirmMs / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</span> : null} · <TxLink hash={tx.txHash} />
     </div>
   );
 }

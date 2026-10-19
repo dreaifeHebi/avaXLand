@@ -1,8 +1,10 @@
+import { useFormat } from "../lib/format";
+import { useI18n, type Translate } from "../lib/i18n";
 import { useState, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { NodeDTO, SplitDTO } from "@avaxland/protocol";
 import { useActions } from "../lib/actions";
-import { fmtUsdc, fullTime, timeAgo } from "../lib/format";
+
 import { useConfig } from "../lib/useConfig";
 import { Avatar } from "./Avatar";
 import { Composer } from "./Composer";
@@ -10,14 +12,16 @@ import { Icon } from "./Icons";
 import { SplitRows } from "./SplitRows";
 import { TxLine, TxLink } from "./TxLink";
 
-const authorOf = (n: NodeDTO) => n.authorName ?? `账号 #${n.authorId}`;
+const authorOf = (n: NodeDTO, t: Translate) => n.authorName ?? t("account.id", { id: String(n.authorId) });
 
 function Quoted({ node }: { node: NodeDTO }) {
+  const { t } = useI18n();
+  const { timeAgo } = useFormat();
   return (
     <Link to={`/n/${node.id}`} className="quote">
       <div className="quote-head">
         <Avatar id={node.authorId} name={node.authorName} size="sm" />
-        <b>{authorOf(node)}</b>
+        <b>{authorOf(node, t)}</b>
         <span className="muted">
           #{node.authorId} · {timeAgo(node.createdAt)}
         </span>
@@ -32,6 +36,8 @@ function Quoted({ node }: { node: NodeDTO }) {
  * variant：row 是信息流里的一行；chain 是帖子详情里排在上面的祖先，头像下面拉一条线连到下一条；focal 是详情页的主角，字大、数字展开。
  */
 export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; splits?: SplitDTO[]; variant?: "row" | "chain" | "focal" }) {
+  const { t } = useI18n();
+  const { fmtUsdc, fullTime, timeAgo, number } = useFormat();
   const cfg = useConfig();
   const actions = useActions();
   const navigate = useNavigate();
@@ -51,12 +57,11 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
   const body = (
     <>
       {node.kind === 1 && node.parent && !focal && variant !== "chain" && (
-        <div className="replying">
-          回复 <Link to={`/n/${node.parentId}`}>{authorOf(node.parent)} 的 #{node.parentId}</Link>
+        <div className="replying"> {t("node.replying")} <Link to={`/n/${node.parentId}`}>{t("node.replyTarget", { name: authorOf(node.parent, t), id: String(node.parentId) })}</Link>
         </div>
       )}
       {text ? <p className="content">{text}</p> : null}
-      {node.fullText === null && node.kind !== 2 && <span className="pill">仅链上摘要</span>}
+      {node.fullText === null && node.kind !== 2 && <span className="pill">{t("node.excerpt")}</span>}
       {node.kind === 2 && node.parent ? <Quoted node={node.parent} /> : null}
     </>
   );
@@ -67,43 +72,43 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
         className="act reply"
         disabled={!actions.ready}
         onClick={() => setReplying((v) => !v)}
-        aria-label={`回复${p ? `（${fmtUsdc(p.reply)} USDC）` : ""}`}
-        title={p ? `回复，付 ${fmtUsdc(p.reply)} USDC` : "回复"}
+        aria-label={p ? t("node.actionPrice", { action: t("kind.reply"), price: fmtUsdc(p.reply) }) : t("kind.reply")}
+        title={p ? t("node.actionPrice", { action: t("kind.reply"), price: fmtUsdc(p.reply) }) : t("kind.reply")}
       >
         <span className="ring">
           <Icon name="reply" />
         </span>
-        {node.replies > 0 && !focal ? node.replies : ""}
-        {p && <span className="price">{fmtUsdc(p.reply)} U</span>}
+        {node.replies > 0 && !focal ? number(node.replies) : ""}
+        {p && <span className="price">{fmtUsdc(p.reply)} USDC</span>}
       </button>
       <button
         className={`act repost ${actions.repost.isPending ? "busy" : ""}`}
         disabled={!actions.ready || actions.repost.isPending}
         onClick={() => actions.repost.mutate(node.id)}
-        aria-label={`转发${p ? `（${fmtUsdc(p.repost)} USDC）` : ""}`}
-        title={p ? `转发，付 ${fmtUsdc(p.repost)} USDC` : "转发"}
+        aria-label={p ? t("node.actionPrice", { action: t("kind.repost"), price: fmtUsdc(p.repost) }) : t("kind.repost")}
+        title={p ? t("node.actionPrice", { action: t("kind.repost"), price: fmtUsdc(p.repost) }) : t("kind.repost")}
       >
         <span className="ring">
           <Icon name="repost" />
         </span>
-        {node.reposts > 0 && !focal ? node.reposts : ""}
-        {p && <span className="price">{fmtUsdc(p.repost)} U</span>}
+        {node.reposts > 0 && !focal ? number(node.reposts) : ""}
+        {p && <span className="price">{fmtUsdc(p.repost)} USDC</span>}
       </button>
       <button
         className={`act like ${actions.like.isPending ? "busy" : ""}`}
         disabled={!actions.ready || actions.like.isPending}
         onClick={() => actions.like.mutate(node.id)}
-        aria-label={`点赞${p ? `（${fmtUsdc(p.like)} USDC）` : ""}`}
-        title={p ? `点赞，付 ${fmtUsdc(p.like)} USDC` : "点赞"}
+        aria-label={p ? t("node.actionPrice", { action: t("kind.like"), price: fmtUsdc(p.like) }) : t("kind.like")}
+        title={p ? t("node.actionPrice", { action: t("kind.like"), price: fmtUsdc(p.like) }) : t("kind.like")}
       >
         <span className="ring">
           <Icon name="heart" />
         </span>
-        {node.likes > 0 && !focal ? node.likes : ""}
-        {p && <span className="price">{fmtUsdc(p.like)} U</span>}
+        {node.likes > 0 && !focal ? number(node.likes) : ""}
+        {p && <span className="price">{fmtUsdc(p.like)} USDC</span>}
       </button>
       {!focal && (
-        <span className={`act earn ${earnedZero ? "zero" : ""}`} title="这条帖子（根帖含整棵树）为作者带来的收入，单位 USDC">
+        <span className={`act earn ${earnedZero ? "zero" : ""}`} title={t("node.earnHint")}>
           <span className="ring">
             <Icon name="coin" />
           </span>
@@ -131,28 +136,24 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
           </Link>
           <div>
             <Link to={`/a/${node.authorId}`} className="name">
-              {authorOf(node)}
+              {authorOf(node, t)}
             </Link>
-            <span className="muted">账号 #{node.authorId}</span>
+            <span className="muted">{t("account.id", { id: String(node.authorId) })}</span>
           </div>
         </div>
         {body}
         <div className="focal-time">
-          <span>{fullTime(node.createdAt)}</span>·<span>节点 #{node.id}</span>·<TxLink hash={node.txHash} />
+          <span>{fullTime(node.createdAt)}</span>·<span>{t("node.id", { id: String(node.id) })}</span>·<TxLink hash={node.txHash} />
         </div>
         <div className="focal-stats">
           <span>
-            <b>{node.replies}</b> 回复
-          </span>
+            <b>{number(node.replies)}</b>{t("stats.replies")}</span>
           <span>
-            <b>{node.reposts}</b> 转发
-          </span>
+            <b>{number(node.reposts)}</b>{t("stats.reposts")}</span>
           <span>
-            <b>{node.likes}</b> 点赞
-          </span>
-          <span className="earn" title="这条帖子（根帖含整棵树）为作者带来的收入">
-            <b>+{fmtUsdc(node.earned)}</b> USDC 收益
-          </span>
+            <b>{number(node.likes)}</b>{t("stats.likes")}</span>
+          <span className="earn" title={t("node.earnHint")}>
+            <b>+{fmtUsdc(node.earned)}</b> USDC · {t("metric.earnings")}</span>
         </div>
         {bar}
         {extras}
@@ -164,8 +165,7 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
       {node.kind === 2 && (
         <div className="tweet-context">
           <Icon name="repost" />
-          <Link to={`/a/${node.authorId}`}>{authorOf(node)}</Link> 转发了
-        </div>
+          <Link to={`/a/${node.authorId}`}>{authorOf(node, t)}</Link>{t("node.reposted")}</div>
       )}
       <div className="tweet-row">
         <div className="tweet-left">
@@ -177,12 +177,12 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
         <div className="tweet-main">
           <header className="tweet-meta">
             <Link to={`/a/${node.authorId}`} className="name">
-              {authorOf(node)}
+              {authorOf(node, t)}
             </Link>
             <span className="muted">
               #{node.authorId} · {timeAgo(node.createdAt)}
             </span>
-            <Link to={`/n/${node.id}`} className="node-id" aria-label={`打开 #${node.id}`} title="打开这条帖子和它下面的讨论">
+            <Link to={`/n/${node.id}`} className="node-id" aria-label={t("node.open", { id: String(node.id) })} title={t("node.openHint")}>
               #{node.id}
             </Link>
           </header>

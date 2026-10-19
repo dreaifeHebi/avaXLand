@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import type { SplitDTO } from "@avaxland/protocol";
 
+import type { Message } from "./i18n";
+
 type Listener = () => void;
 
 function createStore<T>(init: T) {
@@ -23,8 +25,10 @@ function createStore<T>(init: T) {
 
 export interface Toast {
   id: number;
-  title: string;
-  sub?: string;
+  title?: Message;
+  sub?: Message;
+  error?: unknown;
+  badge?: { metric: number; threshold: string };
   kind: "badge" | "info" | "error";
 }
 

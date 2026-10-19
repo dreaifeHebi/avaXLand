@@ -1,3 +1,5 @@
+import { useFormat, avatarColor, shortAddr } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { useEffect, useState } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -12,12 +14,12 @@ import { PageHead } from "../components/PageHead";
 import { TxLink } from "../components/TxLink";
 import { api } from "../lib/api";
 import { art } from "../lib/art";
-import { avatarColor, badgeText, fmtUsdc, shortAddr, timeAgo } from "../lib/format";
-import { payErrorText } from "../lib/pay";
 import { pushToast } from "../lib/store";
 import { useConfig } from "../lib/useConfig";
 
 export function AccountPage() {
+  const { t } = useI18n();
+  const { fmtUsdc, timeAgo, badgeText, number } = useFormat();
   const id = Number(useParams().id);
   const cfg = useConfig();
   const qc = useQueryClient();
@@ -37,7 +39,7 @@ export function AccountPage() {
 
   useEffect(() => {
     if (receipt.isSuccess) {
-      pushToast({ kind: "info", title: "已提现到钱包", sub: "USDC 已到账" });
+      pushToast({ kind: "info", title: { key: "withdraw.success" }, sub: { key: "withdraw.usdcReceived" } });
       qc.invalidateQueries({ queryKey: ["account", id] });
     }
   }, [receipt.isSuccess, id, qc]);
@@ -45,15 +47,15 @@ export function AccountPage() {
   if (q.isLoading)
     return (
       <>
-        <PageHead title="账号" back />
-        <div className="note small">加载中…</div>
+        <PageHead title={t("account.label")} back />
+        <div className="note small">{t("common.loading")}</div>
       </>
     );
   if (q.isError || !q.data)
     return (
       <>
-        <PageHead title="账号" back />
-        <div className="note error small">账号 #{id} 不存在。</div>
+        <PageHead title={t("account.label")} back />
+        <div className="note error small">{t("account.missing", { id: String(id) })}</div>
       </>
     );
   const a = q.data;
@@ -74,13 +76,13 @@ export function AccountPage() {
       });
       setHash(h);
     } catch (e) {
-      pushToast({ kind: "error", title: payErrorText(e) });
+      pushToast({ kind: "error", error: e });
     }
   };
 
   return (
     <>
-      <PageHead title={a.name ?? `账号 #${a.id}`} sub={`账号 #${a.id}`} back />
+      <PageHead title={a.name ?? t("account.id", { id: String(a.id) })} sub={t("account.id", { id: String(a.id) })} back />
       <div
         className={`cover ${cover ? "has-art" : ""}`}
         style={cover ? { backgroundImage: `url(${cover})` } : { background: `linear-gradient(120deg, ${color}, #e84142 60%, #3b0a16)` }}
@@ -88,91 +90,84 @@ export function AccountPage() {
       <div className="profile">
         <div className="profile-top">
           <Avatar id={a.id} name={a.name} size="xl" />
-          {mine && <span className="pill ok">我的账号</span>}
+          {mine && <span className="pill ok">{t("nav.mine")}</span>}
         </div>
         <h2>
-          {a.name ?? `账号 #${a.id}`}
+          {a.name ?? t("account.id", { id: String(a.id) })}
           {litCount > 0 && (
-            <span className="pill" title="已解锁的徽章数">
-              🏅 {litCount}
+            <span className="pill" title={t("account.badgeCount")}>
+              🏅 {number(litCount)}
             </span>
           )}
         </h2>
-        <div className="muted">账号 #{a.id}</div>
+        <div className="muted">{t("account.id", { id: String(a.id) })}</div>
         <div className="profile-facts">
           <span title={a.owner}>
-            <Icon name="wallet" /> 持有者 <span className="mono">{shortAddr(a.owner)}</span>
+            <Icon name="wallet" /> {t("account.owner")} <span className="mono">{shortAddr(a.owner)}</span>
           </span>
           <span>
-            <Icon name="layers" /> 等级 {a.tier}
+            <Icon name="layers" /> {t("account.tier", { tier: a.tier })}
           </span>
           {a.rank.earned && (
             <span>
-              <Icon name="trophy" /> 收益榜第 {a.rank.earned} 名
+              <Icon name="trophy" /> {t("account.rank", { rank: a.rank.earned })}
             </span>
           )}
         </div>
         <div className="profile-counts">
           <span>
-            <b>{a.stats[4]}</b> 被赞
-          </span>
+            <b>{number(a.stats[4]!)}</b>{t("metric.liked")}</span>
           <span>
-            <b>{a.stats[5]}</b> 被回复
-          </span>
+            <b>{number(a.stats[5]!)}</b>{t("metric.replied")}</span>
           <span>
-            <b>{a.stats[6]}</b> 被转发
-          </span>
+            <b>{number(a.stats[6]!)}</b>{t("metric.reposted")}</span>
         </div>
       </div>
       <div className="wallet-card">
         <div>
-          <span className="small muted">投入（付过的费）</span>
+          <span className="small muted">{t("account.spent")}</span>
           <b>{fmtUsdc(a.spent)}</b>
         </div>
         <div>
-          <span className="small muted">累计收益</span>
+          <span className="small muted">{t("account.earned")}</span>
           <b>{fmtUsdc(a.stats[7]!)}</b>
         </div>
         <div className="pending">
-          <span className="small muted">待领 USDC</span>
+          <span className="small muted">{t("account.pending")}</span>
           <b>{fmtUsdc(a.pending)}</b>
         </div>
         {mine && (
           <div className="claim">
             {BigInt(a.pending) > 0n ? (
               <button className="btn dark tiny" disabled={isPending || receipt.isLoading} onClick={claim}>
-                {isPending ? "等待钱包…" : receipt.isLoading ? "上链中…" : "提现到钱包"}
+                {isPending ? t("withdraw.waitWallet") : receipt.isLoading ? t("withdraw.pending") : t("withdraw.action")}
               </button>
             ) : (
-              <span className="small muted">现在没有可提的收益。</span>
+              <span className="small muted">{t("withdraw.none")}</span>
             )}
-            <span className="small muted">提现需要钱包直接发一笔交易，付一点 AVAX。</span>
+            <span className="small muted">{t("withdraw.fee")}</span>
             {hash && (
               <span className="small">
-                <TxLink hash={hash} /> {receipt.isSuccess ? "✓ 已到账" : receipt.isLoading ? "确认中" : ""}
+                <TxLink hash={hash} /> {receipt.isSuccess ? t("withdraw.received") : receipt.isLoading ? t("withdraw.confirming") : ""}
               </span>
             )}
           </div>
         )}
       </div>
       <div className="tabs">
-        <button className={`tab ${tab === "posts" ? "active" : ""}`} onClick={() => setTab("posts")}>
-          发言
-        </button>
-        <button className={`tab ${tab === "badges" ? "active" : ""}`} onClick={() => setTab("badges")}>
-          成就墙
-        </button>
+        <button className={`tab ${tab === "posts" ? "active" : ""}`} onClick={() => setTab("posts")}>{t("account.posts")}</button>
+        <button className={`tab ${tab === "badges" ? "active" : ""}`} onClick={() => setTab("badges")}>{t("account.badges")}</button>
       </div>
       {tab === "posts" && (
         <>
           {posts.map((n) => (
             <NodeCard key={n.id} node={n} />
           ))}
-          {feed.isSuccess && posts.length === 0 && <div className="empty">这个账号还没有发言。</div>}
+          {feed.isSuccess && posts.length === 0 && <div className="empty">{t("account.empty")}</div>}
           {feed.hasNextPage && (
             <div className="note">
               <button className="btn wide" disabled={feed.isFetchingNextPage} onClick={() => feed.fetchNextPage()}>
-                {feed.isFetchingNextPage ? "加载中…" : "加载更多"}
+                {feed.isFetchingNextPage ? t("common.loading") : t("common.more")}
               </button>
             </div>
           )}
@@ -180,7 +175,7 @@ export function AccountPage() {
       )}
       {tab === "badges" && (
         <>
-          <p className="note small">按付费动作的里程碑铸造，绑定账号、随账号 NFT 走、不单独转让；纯状态，不进奖励。</p>
+          <p className="note small">{t("account.badgeInfo")}</p>
           <BadgeWall bits={a.badges} />
           {a.badgeList.length > 0 && (
             <ul className="badge-log small">

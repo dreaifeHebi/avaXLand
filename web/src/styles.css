@@ -354,3 +354,24 @@ svg.icon { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: curren
   .toasts { bottom: 68px; right: 50%; transform: translateX(50%); align-items: center; }
   .menu-list { min-width: 230px; }
 }
+
+/* Language selection stays available in both the rail and mobile header. */
+.language-select { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 999px; max-width: 100%; }
+.language-select:hover { background: var(--bg-hover); }
+.language-select > span { font-size: 26px; line-height: 1; }
+.language-select select { font: inherit; color: var(--text); background: var(--bg); border: 0; border-radius: 6px; padding: 4px; max-width: 100%; cursor: pointer; }
+.language-select select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.language-select.compact { padding: 0; gap: 0; }
+.language-select.compact > span { display: none; }
+.language-select.compact select { width: 86px; font-size: 12px; }
+.box h3 { flex-wrap: wrap; gap: 4px 12px; }
+@media (min-width: 641px) and (max-width: 1260px) {
+  .rail .language-select { padding: 8px 0; }
+  .rail .language-select > span { display: none; }
+  .rail .language-select select { width: 70px; font-size: 11px; }
+}
+@media (max-width: 640px) {
+  .topbar .cta { width: 36px; min-width: 36px; padding: 0; }
+  .topbar .cta .cta-icon { display: inline-flex; }
+  .topbar .cta .label { display: none; }
+}

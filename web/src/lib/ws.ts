@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { WsMessage } from "@avaxland/protocol";
 import { WS_URL } from "./api";
-import { badgeText } from "./format";
 import { pushFlow, pushToast, wsStore } from "./store";
 
 /** 一条长连接：服务端每落库一条链上事件就推过来；这里把它翻译成「刷新哪些查询」与「弹什么提示」 */
@@ -53,8 +52,8 @@ export function useSocket(myAccountIds: number[]) {
             pushToast(
               {
                 kind: "badge",
-                title: mine.has(msg.accountId) ? "你解锁了新徽章" : `#${msg.accountId} 解锁了新徽章`,
-                sub: badgeText(msg.metric, msg.threshold),
+                title: { key: mine.has(msg.accountId) ? "badge.mine" : "badge.other", params: { id: String(msg.accountId) } },
+                badge: { metric: msg.metric, threshold: msg.threshold },
               },
               mine.has(msg.accountId) ? 6000 : 3500,
             );

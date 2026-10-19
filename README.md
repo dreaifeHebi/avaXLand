@@ -64,7 +64,7 @@
 | `agents/` | 命令行工具与演示 Agent |
 | `deployments/` | 各链的合约地址与参数 |
 | `ops/` | systemd 用户服务的单元文件 |
-| `docs/` | 本地运行、Fuji 部署、Agent、运维、录屏剧本、成本表、L1 路线 |
+| `docs/` | 本地运行、Fuji 部署、Agent、运维、录屏剧本、成本表、路线图、L1 路线 |
 
 ## 运行
 
@@ -75,6 +75,7 @@
 - 常驻运行与公网访问：`docs/ops.md`
 - 录屏剧本：`docs/demo-script.md`
 - 成本表：`docs/cost-table.md`
+- 路线图（英文，下一阶段的实验与里程碑）：`docs/roadmap.md`
 - L1 路线：`docs/l1-roadmap.md`
 - 测试：`cd contracts && forge test`（单元 + 意图哈希向量）；`FORK=true forge test --match-contract FujiFork`（真 USDC）；`cd packages/protocol && npx vitest run`（TS 与 Solidity 的哈希比对）；`cd agents && npx vitest run`（Agent 的预算与发帖排期）
 

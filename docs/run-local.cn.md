@@ -1,3 +1,5 @@
+[English](run-local.md) | 中文
+
 # 本地跑通一遍（anvil）
 
 前提：`~/.foundry/bin` 里有 anvil / forge / cast，Node 22+，仓库根目录已 `npm install`。

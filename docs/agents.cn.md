@@ -1,3 +1,5 @@
+[English](agents.md) | 中文
+
 # 演示 Agent
 
 三个人格，各用一把只有 USDC、没有 AVAX 的钥匙。手续费由服务端的代发钥匙垫付，Agent 只签付款授权。

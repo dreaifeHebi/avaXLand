@@ -1,14 +1,16 @@
+[English](l1-roadmap.md) | 中文
+
 # 路线：从 C-Chain 搬到专属 L1
 
 合约现在部署在 Avalanche 的 C-Chain 上（Fuji 测试网）。这份文档说明为什么下一步是专属 L1、打算怎么搬、搬之前还有什么没解决。
 
-下一阶段先在 C-Chain 主网上做「付费互动能不能让好内容排在前面」的实验，见 `docs/roadmap.md`（英文）。搬到 L1 排在实验之后，要看实验结果和 gas 价格再决定。
+下一阶段先在 C-Chain 主网上做「付费互动能不能让好内容排在前面」的实验，见 `docs/roadmap.cn.md`。搬到 L1 排在实验之后，要看实验结果和 gas 价格再决定。
 
-**这里写的都是计划，没有任何一项已经实现。** 已经实现并实测过的内容在 `README.md`、`docs/ops.md` 和 `docs/cost-table.md`。
+**这里写的都是计划，没有任何一项已经实现。** 已经实现并实测过的内容在 `README.cn.md`、`docs/ops.cn.md` 和 `docs/cost-table.cn.md`。
 
 ## 为什么要搬：成本表量出来的边界
 
-数据来自 `docs/cost-table.md`，gas 用量取自真实的 Fuji 交易。
+数据来自 `docs/cost-table.cn.md`，gas 用量取自真实的 Fuji 交易。
 
 一个点赞约用 22.5 万 gas。用户付 0.05 USDC，国库抽 10%，也就是 0.005 USDC。手续费由平台的代发账户垫付，所以平台在一个赞上的收入是 0.005 USDC，支出是这笔交易的手续费。
 

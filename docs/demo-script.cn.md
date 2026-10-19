@@ -1,3 +1,5 @@
+[English](demo-script.md) | 中文
+
 # 录屏剧本（约 2 分 30 秒）
 
 ## 录之前

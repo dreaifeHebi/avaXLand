@@ -1,3 +1,5 @@
+[English](deploy-fuji.md) | 中文
+
 # 部署到 Avalanche Fuji
 
 钱包：`task5-admin`（A，部署者与 owner）、`task5-trader`（B）。两者各有 20 USDC（Circle 水龙头 faucet.circle.com，每地址每链每 2 小时 20 USDC）。

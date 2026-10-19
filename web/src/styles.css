@@ -62,7 +62,7 @@ svg.icon { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: curren
 /* ── 三栏骨架：左导航 / 中间信息流 / 右侧动态 ── */
 .shell { display: flex; justify-content: center; min-height: 100vh; }
 .rail { width: 260px; flex: none; position: sticky; top: 0; height: 100vh; padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 2px; }
-.col { width: 600px; max-width: 100%; flex: none; border-left: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 100vh; padding-bottom: 80px; }
+.col { width: 600px; max-width: 100%; min-width: 0; flex: 0 1 600px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 100vh; padding-bottom: 80px; }
 .right { width: 350px; flex: none; margin-left: 28px; padding: 12px 0 40px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow-y: auto; scrollbar-width: none; }
 .right::-webkit-scrollbar { display: none; }
 .topbar, .tabbar { display: none; }
@@ -275,7 +275,8 @@ svg.icon { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: curren
 .profile-facts svg.icon { width: 17px; height: 17px; }
 .profile-counts { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; color: var(--muted); font-size: 14px; }
 .profile-counts b { color: var(--text); }
-.wallet-card { margin: 14px 16px 4px; padding: 14px 16px; border-radius: var(--radius); background: var(--bg-soft); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: center; }
+.wallet-card { margin: 14px 16px 4px; padding: 14px 16px; border-radius: var(--radius); background: var(--bg-soft); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.wallet-card > div:not(.claim) { display: flex; flex-direction: column; justify-content: flex-end; }
 .wallet-card b { display: block; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .wallet-card .pending b { color: var(--ok); }
 .wallet-card .claim { grid-column: span 3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); }

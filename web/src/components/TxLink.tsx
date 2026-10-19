@@ -35,10 +35,17 @@ export function TxLink({ hash, label, icon }: { hash: string; label?: string; ic
 export function TxLine({ tx }: { tx: LastTx }) {
   const { t } = useI18n();
   const { number } = useFormat();
+  const precision = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+  const params = {
+    label: t(tx.label, { id: String(tx.id) }),
+    seconds: number(tx.ms / 1000, precision),
+  };
+  const timing = tx.confirmMs === undefined
+    ? t("tx.timing", params)
+    : t("tx.timingWithBlock", { ...params, block: number(tx.confirmMs / 1000, precision) });
   return (
     <div className="txline small">
-      <span className="ok">{t("tx.confirmed")}</span> {t(tx.label, { id: String(tx.id) })} · {t("tx.afterSigning")} <b>{t("tx.seconds", { seconds: number(tx.ms / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</b>
-      {tx.confirmMs !== undefined ? <span className="muted">{t("tx.blockTime", { seconds: number(tx.confirmMs / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</span> : null} · <TxLink hash={tx.txHash} />
+      <span className="ok">{t("tx.confirmed")}</span>{" "}{timing} · <TxLink hash={tx.txHash} />
     </div>
   );
 }

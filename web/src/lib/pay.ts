@@ -33,8 +33,11 @@ export function usePay(): { client: Client | null; signer: Signer | null; ready:
 }
 
 export function payErrorText(e: unknown, t: Translate): string {
-  if (e instanceof PaymentRejected) return REASON_KEYS[e.reason] ? t(REASON_KEYS[e.reason]!) : t("error.payment", { reason: e.reason });
-  if (e instanceof RelayFailed) return t(e.message === "等回执超时" ? "error.timeout" : "error.relay");
+  if (e instanceof PaymentRejected) {
+    const message = REASON_KEYS[e.reason] ? t(REASON_KEYS[e.reason]!) : t("error.payment", { reason: e.reason });
+    return e.detail ? t("error.detail", { message, reason: e.detail }) : message;
+  }
+  if (e instanceof RelayFailed) return e.code === "RECEIPT_TIMEOUT" ? t("error.timeout") : t("error.relay", { reason: e.message });
   const m = (e as Error)?.message ?? String(e);
   if (m === "CONNECT_WALLET") return t("wallet.connectFirst");
   if (m === "CREATE_ACCOUNT") return t("account.createFirst");

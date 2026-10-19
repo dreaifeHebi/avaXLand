@@ -9,15 +9,27 @@ export const METRIC_KEYS = ["action.post", "kind.reply", "kind.repost", "kind.li
 export const TIER_LABELS = ["I", "II", "III", "IV"] as const;
 export const KIND_KEYS = ["kind.post", "kind.reply", "kind.repost"] as const;
 
+const numberFormats = new Map<string, Intl.NumberFormat>();
+const relativeFormats = new Map<Locale, Intl.RelativeTimeFormat>();
+const dateFormats = new Map<Locale, Intl.DateTimeFormat>();
+
 export function createFormat(locale: Locale, t: Translate) {
-  const number = (value: string | number | bigint, options?: Intl.NumberFormatOptions) =>
+  const number = (value: string | number | bigint, options: Intl.NumberFormatOptions = {}) => {
+    const key = JSON.stringify([locale, Object.entries(options).sort(([a], [b]) => a.localeCompare(b))]);
+    let formatter = numberFormats.get(key);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(locale, options);
+      numberFormats.set(key, formatter);
+    }
     // Intl accepts decimal strings without losing precision; TypeScript's overload only lists number/bigint.
-    new Intl.NumberFormat(locale, options).format(value as number | bigint);
+    return formatter.format(value as number | bigint);
+  };
   const fmtUsdc = (value: string | bigint | number, digits = 4) => {
     const [whole, fraction = ""] = formatUnits(BigInt(value), 6).split(".");
     return number(`${whole}.${fraction.slice(0, digits) || "0"}`, { maximumFractionDigits: digits });
   };
-  const relative = new Intl.RelativeTimeFormat(locale, { numeric: "always" });
+  if (!relativeFormats.has(locale)) relativeFormats.set(locale, new Intl.RelativeTimeFormat(locale, { numeric: "always" }));
+  const relative = relativeFormats.get(locale)!;
   const timeAgo = (ts: number) => {
     const seconds = Math.max(0, Math.floor(Date.now() / 1000) - ts);
     if (seconds < 60) return relative.format(-seconds, "second");
@@ -25,9 +37,12 @@ export function createFormat(locale: Locale, t: Translate) {
     if (seconds < 86400) return relative.format(-Math.floor(seconds / 3600), "hour");
     return relative.format(-Math.floor(seconds / 86400), "day");
   };
-  const fullTime = (ts: number) => new Intl.DateTimeFormat(locale, {
-    year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
-  }).format(ts * 1000);
+  if (!dateFormats.has(locale)) {
+    dateFormats.set(locale, new Intl.DateTimeFormat(locale, {
+      year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
+    }));
+  }
+  const fullTime = (ts: number) => dateFormats.get(locale)!.format(ts * 1000);
   const badgeText = (metric: number, threshold: string) => {
     const label = t(METRIC_KEYS[metric]!);
     return metric === 7 ? `${label} ${fmtUsdc(threshold, 0)} USDC` : `${label} ×${number(threshold)}`;

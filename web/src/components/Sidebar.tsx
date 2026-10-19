@@ -22,7 +22,7 @@ export function FlowTicker({ limit = 8 }: { limit?: number }) {
   }, [seed.data]);
   return (
     <section className="box">
-      <h3> {t("nav.flows")} <span className="small muted">{t("network.live")}</span>
+      <h3>{t("nav.flows")} <span className="small muted">{t("network.live")}</span>
       </h3>
       {flows.length === 0 && <div className="box-empty">{t("flow.empty")}</div>}
       <ul>
@@ -33,7 +33,7 @@ export function FlowTicker({ limit = 8 }: { limit?: number }) {
               <span className="ticker-body">
                 <span className="who">{s.toName ?? `#${s.toAccountId}`}</span>
                 <span className="small muted">
-                  {t(s.source ? SOURCE_KEYS[s.source] : "flow.other")} #{s.nodeId}
+                  {t(s.source ? SOURCE_KEYS[s.source] : "flow.other", { id: String(s.nodeId) })}
                   {s.depth > 0 ? t("flow.upstream", { depth: s.depth }) : ""}
                 </span>
               </span>
@@ -52,7 +52,7 @@ export function TopEarners() {
   const q = useQuery({ queryKey: ["leaderboard", "earned"], queryFn: () => api.leaderboard("earned"), refetchInterval: 10_000 });
   return (
     <section className="box">
-      <h3> {t("rank.top")} <Link to="/rank">{t("common.seeAll")}</Link>
+      <h3>{t("rank.top")} <Link to="/rank">{t("common.seeAll")}</Link>
       </h3>
       <ol>
         {(q.data?.items ?? []).slice(0, 5).map((r) => (
@@ -82,7 +82,7 @@ export function StatsCard() {
   return (
     <section className="box">
       {img && <img className="box-art" src={img} alt="" />}
-      <h3> {t("stats.now")} <span className="small muted">USDC</span>
+      <h3>{t("stats.now")} <span className="small muted">USDC</span>
       </h3>
       <div className="stats">
         <div>

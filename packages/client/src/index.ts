@@ -48,6 +48,7 @@ export class RelayFailed extends Error {
   constructor(
     message: string,
     public txHash?: Hex,
+    public code = "RELAY_FAILED",
   ) {
     super(message);
   }
@@ -67,7 +68,7 @@ async function toError(r: Response): Promise<Error> {
   } catch {
     /* ignore */
   }
-  if (r.status === 502) return new RelayFailed(body?.detail ?? "relay failed", body?.txHash);
+  if (r.status === 502) return new RelayFailed(body?.detail ?? "relay failed", body?.txHash, body?.error);
   return new PaymentRejected(body?.error ?? `HTTP_${r.status}`, body?.detail, r.status);
 }
 

@@ -57,7 +57,7 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
   const body = (
     <>
       {node.kind === 1 && node.parent && !focal && variant !== "chain" && (
-        <div className="replying"> {t("node.replying")} <Link to={`/n/${node.parentId}`}>{t("node.replyTarget", { name: authorOf(node.parent, t), id: String(node.parentId) })}</Link>
+        <div className="replying">{t("node.replying")} <Link to={`/n/${node.parentId}`}>{t("node.replyTarget", { name: authorOf(node.parent, t), id: String(node.parentId) })}</Link>
         </div>
       )}
       {text ? <p className="content">{text}</p> : null}
@@ -79,7 +79,7 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
           <Icon name="reply" />
         </span>
         {node.replies > 0 && !focal ? number(node.replies) : ""}
-        {p && <span className="price">{fmtUsdc(p.reply)} USDC</span>}
+        {p && <span className="price">{fmtUsdc(p.reply)} U</span>}
       </button>
       <button
         className={`act repost ${actions.repost.isPending ? "busy" : ""}`}
@@ -92,7 +92,7 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
           <Icon name="repost" />
         </span>
         {node.reposts > 0 && !focal ? number(node.reposts) : ""}
-        {p && <span className="price">{fmtUsdc(p.repost)} USDC</span>}
+        {p && <span className="price">{fmtUsdc(p.repost)} U</span>}
       </button>
       <button
         className={`act like ${actions.like.isPending ? "busy" : ""}`}
@@ -105,7 +105,7 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
           <Icon name="heart" />
         </span>
         {node.likes > 0 && !focal ? number(node.likes) : ""}
-        {p && <span className="price">{fmtUsdc(p.like)} USDC</span>}
+        {p && <span className="price">{fmtUsdc(p.like)} U</span>}
       </button>
       {!focal && (
         <span className={`act earn ${earnedZero ? "zero" : ""}`} title={t("node.earnHint")}>
@@ -147,11 +147,11 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
         </div>
         <div className="focal-stats">
           <span>
-            <b>{number(node.replies)}</b>{t("stats.replies")}</span>
+            <b>{number(node.replies)}</b>{" "}{t("stats.replies")}</span>
           <span>
-            <b>{number(node.reposts)}</b>{t("stats.reposts")}</span>
+            <b>{number(node.reposts)}</b>{" "}{t("stats.reposts")}</span>
           <span>
-            <b>{number(node.likes)}</b>{t("stats.likes")}</span>
+            <b>{number(node.likes)}</b>{" "}{t("stats.likes")}</span>
           <span className="earn" title={t("node.earnHint")}>
             <b>+{fmtUsdc(node.earned)}</b> USDC · {t("metric.earnings")}</span>
         </div>
@@ -165,7 +165,7 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
       {node.kind === 2 && (
         <div className="tweet-context">
           <Icon name="repost" />
-          <Link to={`/a/${node.authorId}`}>{authorOf(node, t)}</Link>{t("node.reposted")}</div>
+          <Link to={`/a/${node.authorId}`}>{authorOf(node, t)}</Link>{" "}{t("node.reposted")}</div>
       )}
       <div className="tweet-row">
         <div className="tweet-left">

@@ -9,6 +9,7 @@ import { USDC_FAUCET, useOnTestnet } from "../lib/faucet";
 import { composeStore, useStore } from "../lib/store";
 import { useConfig } from "../lib/useConfig";
 import { Avatar } from "./Avatar";
+import { LinkedMessage } from "./LinkedMessage";
 import { FaucetHint } from "./StartGuide";
 import { TxLine } from "./TxLink";
 
@@ -28,18 +29,16 @@ function Hero() {
         <p>{t("hero.body")}</p>
         {p && (
           <div className="prices">
-            <span> {t("price.account")} {fmtUsdc(p.mint)}</span>
-            <span> {t("action.post")} {fmtUsdc(p.post)}</span>
-            <span> {t("kind.reply")} {fmtUsdc(p.reply)}</span>
-            <span> {t("kind.repost")} {fmtUsdc(p.repost)}</span>
-            <span> {t("kind.like")} {fmtUsdc(p.like)} USDC</span>
+            <span>{t("price.account")} {fmtUsdc(p.mint)}</span>
+            <span>{t("action.post")} {fmtUsdc(p.post)}</span>
+            <span>{t("kind.reply")} {fmtUsdc(p.reply)}</span>
+            <span>{t("kind.repost")} {fmtUsdc(p.repost)}</span>
+            <span>{t("kind.like")} {fmtUsdc(p.like)} USDC</span>
           </div>
         )}
         {onTestnet && (
           <p className="hero-try">
-            {t("hero.try")}
-            <a href={USDC_FAUCET} target="_blank" rel="noreferrer">{t("faucet.circle")}</a>{" "}
-
+            <LinkedMessage message="hero.try" link={<a href={USDC_FAUCET} target="_blank" rel="noreferrer">{t("faucet.circle")}</a>} />
           </p>
         )}
       </div>
@@ -84,7 +83,7 @@ export function Composer({ kind, parentId, onDone, autoFocus, inline }: { kind: 
   if (!isConnected) return kind === "post" ? <Hero /> : <div className="note small">{t("composer.connectReply", { price })}</div>;
   if (!current)
     return (
-      <div className="note small"> {t("composer.noAccount")} <FaucetHint need={cfg.data?.prices.mint} />
+      <div className="note small">{t("composer.noAccount")} <FaucetHint need={cfg.data?.prices.mint} />
       </div>
     );
 

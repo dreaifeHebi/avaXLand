@@ -78,7 +78,7 @@ async function settle(
 
   p.beforeSend?.();
   const r = await sendAndConfirm(p.fn, args, est.gas);
-  if (!r.ok) return c.json({ error: "RELAY_FAILED", detail: r.reason, txHash: r.txHash }, 502);
+  if (!r.ok) return c.json({ error: r.reason === "RECEIPT_TIMEOUT" ? "RECEIPT_TIMEOUT" : "RELAY_FAILED", detail: r.reason, txHash: r.txHash }, 502);
   p.afterConfirm?.(r);
 
   const settlement: SettlementResponse = { success: true, transaction: r.txHash, network: cfg.network, payer: v.auth.from, amount: p.amount.toString() };

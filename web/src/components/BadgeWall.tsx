@@ -22,7 +22,7 @@ export function BadgeWall({ bits }: { bits: number }) {
             <div className="badge-cells">
               {TIER_LABELS.map((tierLabel, tier) => {
                 const lit = (bits >> (m * 4 + tier)) & 1;
-                const threshold = th ? (m === 7 ? `${fmtUsdc(th.earned[tier]!, 0)} USDC` : `×${number(th.count[tier]!)}`) : "";
+                const threshold = th ? (m === 7 ? `${fmtUsdc(th.earned[tier]!, 0)} U` : `×${number(th.count[tier]!)}`) : "";
                 return (
                   <span key={tier} className={`badge-cell ${lit ? "lit" : ""}`} title={`${t(key)} ${threshold}${lit ? ` · ${t("badge.unlocked")}` : ""}`}>
                     {tierLabel}

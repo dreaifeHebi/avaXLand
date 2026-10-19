@@ -21,11 +21,11 @@ export function FeedPage() {
       <PageHead title={t("nav.feed")} />
       <Composer kind="post" />
       {q.isLoading && <div className="note small">{t("common.loading")}</div>}
-      {q.isError && <div className="note error small">{t("feed.error")}</div>}
+      {q.isError && <div className="note error small">{t("feed.error")} {q.error.message}</div>}
       {items.length === 0 && q.isSuccess && (
         <div className="empty">
           {empty && <img src={empty} alt="" />}
-          <b>{t("feed.empty")}</b>{t("feed.first")}</div>
+          <b>{t("feed.empty")}</b>{" "}{t("feed.first")}</div>
       )}
       {items.map((n) => (
         <NodeCard key={n.id} node={n} />

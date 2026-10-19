@@ -130,7 +130,7 @@ function waitReceipt(hash: Hex, timeoutMs = 60_000, everyMs = 120): Promise<Tran
     };
     const tick = async () => {
       if (done) return;
-      if (Date.now() - t0 > timeoutMs) return finish(() => reject(new Error("等回执超时")));
+      if (Date.now() - t0 > timeoutMs) return finish(() => reject(new Error("RECEIPT_TIMEOUT")));
       try {
         const r = await publicClient.getTransactionReceipt({ hash });
         finish(() => resolve(r));

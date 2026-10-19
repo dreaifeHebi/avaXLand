@@ -1,6 +1,6 @@
 import type { AccountDTO, ConfigDTO, FeedPage, LeaderboardRow, NodeDTO, SplitDTO, TreeDTO } from "@avaxland/protocol";
 
-/** 开发时 Vite 把 /api 代理到 8788；打包后由服务端同源托管，直接同源请求 */
+/** 开发时 Vite 把 /api 代理到开发网关（默认 8787，可配置）；打包后由服务端同源托管，直接同源请求 */
 export const API_BASE: string = (import.meta.env.VITE_API_URL as string | undefined) || (import.meta.env.DEV ? "/api" : "");
 
 export const WS_URL: string = (() => {

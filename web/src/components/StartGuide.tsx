@@ -1,3 +1,4 @@
+import { LinkedMessage } from "./LinkedMessage";
 import { useAccount } from "wagmi";
 import { useMyAccount } from "../lib/account";
 import { AVAX_FAUCET, USDC_FAUCET, useOnTestnet, useUsdcBalance } from "../lib/faucet";
@@ -21,7 +22,7 @@ export function FaucetHint({ need }: { need?: string | bigint }) {
     <span className={short ? "warn" : undefined}>
       {balance !== undefined && t("faucet.balance", { amount: fmtUsdc(balance, 2) })}{" "}
       {short && t("faucet.short")}{" "}
-      {t("faucet.hint")} <FaucetLink />
+      <LinkedMessage message="faucet.hint" link={<FaucetLink />} />
     </span>
   );
 }
@@ -49,7 +50,7 @@ export function StartGuide() {
         <li className={balance !== undefined && balance >= BigInt(p.mint) ? "done" : ""}>
           <b>{t("guide.usdc")}</b>
           <span className="small muted">
-            <FaucetLink /> · {t("guide.faucet")}{" "}
+            <LinkedMessage message="guide.faucet" link={<FaucetLink />} />{" "}
             {balance !== undefined && t("faucet.balance", { amount: fmtUsdc(balance, 2) })}
           </span>
         </li>

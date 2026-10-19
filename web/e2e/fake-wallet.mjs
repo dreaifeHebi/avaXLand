@@ -11,7 +11,7 @@ const { createWalletClient, http, defineChain } = reqApp("viem");
 const { privateKeyToAccount } = reqApp("viem/accounts");
 
 const OUT = process.argv[2] ?? "./ui-shots";
-const BASE = process.env.BASE ?? "http://localhost:8788";
+const BASE = process.env.BASE ?? "http://localhost:8787";
 const RPC = process.env.RPC_URL ?? "http://127.0.0.1:8545";
 const PK = "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"; // anvil #4 → 0x15d3…6A65（部署脚本给它发了 10000 USDC）
 const GRUMP_KEY = "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"; // anvil #3，账号 #2 Grump
@@ -36,7 +36,7 @@ function coerce(types, typeName, value) {
 function cli(args, env = {}) {
   const r = spawnSync("npx", ["tsx", "src/cli.ts", ...args], {
     cwd: new URL("../../agents/", import.meta.url).pathname,
-    env: { ...process.env, SERVER_URL: process.env.SERVER_URL ?? "http://127.0.0.1:8788", PATH: `${process.env.HOME}/.nvm/versions/node/v22.22.3/bin:${process.env.PATH}`, ...env },
+    env: { ...process.env, SERVER_URL: process.env.SERVER_URL ?? "http://localhost:8787", PATH: `${process.env.HOME}/.nvm/versions/node/v22.22.3/bin:${process.env.PATH}`, ...env },
     encoding: "utf8",
   });
   log(`cli ${args.join(" ")} → ${(r.stdout + r.stderr).trim().split("\n").pop()}`);

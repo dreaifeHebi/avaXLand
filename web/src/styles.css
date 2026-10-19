@@ -1,4 +1,6 @@
 :root {
+  --font-latin: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Liberation Sans", "DejaVu Sans";
+  --font-cjk: sans-serif;
   --bg: #ffffff;
   --bg-soft: #f7f9f9;
   --bg-hover: rgba(15, 20, 25, 0.04);
@@ -40,8 +42,13 @@
   color-scheme: dark;
 }
 
+:root:lang(ja) { --font-cjk: "Hiragino Sans", "Noto Sans CJK JP", "Yu Gothic UI"; }
+:root:lang(zh-TW) { --font-cjk: "PingFang TC", "Noto Sans CJK TC", "Microsoft JhengHei"; }
+:root:lang(zh-CN) { --font-cjk: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei"; }
+:lang(ja) .hero h2 { word-break: auto-phrase; }
+
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 var(--font-latin), var(--font-cjk), sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; }
 h1, h2, h3, h4, p { margin: 0; }

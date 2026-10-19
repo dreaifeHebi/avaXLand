@@ -38,16 +38,40 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale}: mobile overflow`);
     await page.screenshot({ path: `${out}/${browserLanguage}-mobile.png`, fullPage: true });
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await context.route("**/api/nodes/1", async (route) => {
+      const response = await route.fetch();
+      const thread = await response.json();
+      await route.fulfill({ response, json: { ...thread, node: { ...thread.node, replies: 1, reposts: 0, likes: 2 } } });
+    });
     await page.goto(`${base}/n/1`);
     await page.locator(".tweet.focal .content").waitFor();
     assert.equal(await page.locator(".tweet.focal .content").textContent(), "hello avaXLand", "user content must stay unchanged");
-    if (locale === "en") assert.match(await page.locator(".focal-stats").innerText(), /\d+ Replies/);
+    if (locale === "en") {
+      const counts = await page.locator(".focal-stats").innerText();
+      for (const expected of ["1 Reply", "0 Reposts", "2 Likes"]) assert(counts.includes(expected));
+      assert(!counts.includes("1 Replies"));
+    }
     await page.screenshot({ path: `${out}/${browserLanguage}-thread.png`, fullPage: true });
+    for (const width of [1021, 360]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.screenshot({ path: `${out}/${browserLanguage}-thread-${width}.png`, fullPage: true });
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await context.route("**/api/accounts/1", async (route) => {
+      const response = await route.fetch();
+      const account = await response.json();
+      account.stats[4] = "1"; account.stats[5] = "2"; account.stats[6] = "0";
+      await route.fulfill({ response, json: account });
+    });
     await page.goto(`${base}/a/1`);
     const achievements = { en: "Achievements", "zh-CN": "成就墙", "zh-TW": "成就牆", ja: "実績" };
     await page.getByRole("button", { name: achievements[locale], exact: true }).click();
     assert.equal(await page.locator(".badge-row").count(), 8);
-    if (locale === "en") assert.match(await page.locator(".profile-counts").innerText(), /\d+ Likes received/);
+    if (locale === "en") {
+      const counts = await page.locator(".profile-counts").innerText();
+      for (const expected of ["1 Like received", "2 Replies received", "0 Reposts received"]) assert(counts.includes(expected));
+      assert(!counts.includes("1 Likes received"));
+    }
     await page.screenshot({ path: `${out}/${browserLanguage}-achievements.png`, fullPage: true });
     await page.setViewportSize({ width: 360, height: 812 });
     const amountTops = await page.locator(".wallet-card > div:not(.claim) > b").evaluateAll((items) => items.map((item) => item.getBoundingClientRect().top));
@@ -72,13 +96,32 @@ try {
       before: link.previousSibling.textContent, after: link.nextSibling.textContent,
     }));
     assert(linkSentence.before.length > 0 && linkSentence.after.length > 0, `${locale}: inline faucet link`);
+    const withdrawal = page.locator(".guide > p");
+    const withdrawalText = await withdrawal.textContent();
+    assert(!withdrawalText.includes("{link}") && !withdrawalText.includes("undefined"));
+    const withdrawalLink = await withdrawal.locator("a").evaluate((link) => ({ before: link.previousSibling.textContent, after: link.nextSibling.textContent }));
+    assert(withdrawalLink.before.length > 0 && withdrawalLink.after.length > 0, `${locale}: withdrawal link inside sentence`);
+    if (locale !== "en") {
+      assert(!/[。．]\s/.test(withdrawalText), `${locale}: spaces between withdrawal sentences`);
+      assert(!/[。．]\s/.test(await page.locator(".guide li:nth-child(2) .small").textContent()), `${locale}: spaces between faucet sentences`);
+    }
     await page.screenshot({ path: `${out}/${browserLanguage}-guide.png`, fullPage: true });
+    await page.setViewportSize({ width: 360, height: 900 });
+    await page.screenshot({ path: `${out}/${browserLanguage}-guide-360.png`, fullPage: true });
     for (const width of [641, 700, 1021, 1060]) {
       await page.setViewportSize({ width, height: 900 });
       const geometry = await page.locator(".rail select").evaluate((select) => ({
         left: select.getBoundingClientRect().left, right: select.getBoundingClientRect().right,
         width: innerWidth, scroll: document.documentElement.scrollWidth,
       }));
+      assert.equal(await page.locator(".rail select option:checked").textContent(), { en: "EN", "zh-CN": "简中", "zh-TW": "繁中", ja: "日本語" }[locale]);
+      const fits = await page.locator(".rail select").evaluate((select) => {
+        const style = getComputedStyle(select);
+        const ctx = document.createElement("canvas").getContext("2d");
+        ctx.font = `${style.fontSize} ${style.fontFamily}`;
+        return ctx.measureText(select.selectedOptions[0].text).width + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + 20 <= select.clientWidth;
+      });
+      assert(fits, `${locale}: complete narrow label`);
       assert(geometry.left >= 0 && geometry.right <= width && geometry.scroll <= width, `${locale}: overflow at ${width}: ${JSON.stringify(geometry)}`);
       await page.screenshot({ path: `${out}/${browserLanguage}-width-${width}.png`, fullPage: true });
     }
@@ -121,13 +164,19 @@ try {
     const dictionaries = await Promise.all(["en", "zh-CN", "zh-TW", "ja"].map(async (locale) => ({
       locale, dictionary: (await import(`/src/lib/i18n/${locale}.ts`)).default,
     })));
-    const placeholders = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
+    const variants = (message) => typeof message === "string" ? [message] : Object.values(message);
+    const placeholders = (message) => [...message.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
     const reference = dictionaries[0].dictionary;
     const mismatches = dictionaries.flatMap(({ locale, dictionary }) => Object.keys(reference).filter((key) =>
-      !dictionary[key] || placeholders(dictionary[key]) !== placeholders(reference[key]),
+      !dictionary[key] || variants(dictionary[key]).some((text) => placeholders(text) !== placeholders(variants(reference[key])[0])),
     ).map((key) => `${locale}:${key}`));
     return {
       paymentErrors,
+      plurals: ["en", "zh-CN", "zh-TW", "ja"].map((locale) => ({
+        locale,
+        labels: ["stats.replies", "stats.likes", "stats.reposts", "metric.liked", "metric.replied", "metric.reposted"].map((key) => [0, 1, 2].map((count) => translator(locale)(key, { count }))),
+        faucet: translator(locale)("faucet.balance", { amount: "0" }) + translator(locale)("faucet.short") + translator(locale)("faucet.hint", { link: "LINK" }),
+      })),
       matches: cases.map(([languages, expected]) => [languages, browserLocale(languages), expected]),
       mismatches,
       formats: dictionaries.map(({ locale }) => {
@@ -145,6 +194,15 @@ try {
   assert.equal(results.paymentErrors[1].text[0], "Transaction failed: AlreadyLiked");
   for (const [languages, actual, expected] of results.matches) assert.equal(actual, expected, languages.join(","));
   assert.deepEqual(results.mismatches, [], "dictionary placeholders must match English");
+  assert.deepEqual(results.plurals[0].labels, [
+    ["Replies", "Reply", "Replies"], ["Likes", "Like", "Likes"], ["Reposts", "Repost", "Reposts"],
+    ["Likes received", "Like received", "Likes received"], ["Replies received", "Reply received", "Replies received"], ["Reposts received", "Repost received", "Reposts received"],
+  ]);
+  for (const { labels, faucet } of results.plurals.slice(1)) {
+    assert(labels.every((row) => new Set(row).size === 1));
+    assert(!/[。．]\s/.test(faucet), "no spaces between CJK faucet sentences");
+  }
+  assert(results.plurals[0].faucet.includes("USDC. Not enough"));
   for (const [locale, usdc, truncated, precise, count] of results.formats) {
     assert.equal(usdc, "12,345.6789", locale);
     assert.equal(truncated, "0.99", locale);

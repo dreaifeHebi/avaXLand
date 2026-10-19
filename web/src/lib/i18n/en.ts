@@ -44,16 +44,16 @@ const en = {
   "footer": "avaXLand · Paid social on Avalanche. Every Reaction is onchain and open to verify.",
   "faucet.circle": "Circle faucet",
   "faucet.avax": "Avalanche faucet",
-  "faucet.balance": "Wallet balance: {amount} USDC.",
-  "faucet.short": "Not enough for this payment.",
+  "faucet.balance": "Wallet balance: {amount} USDC. ",
+  "faucet.short": "Not enough for this payment. ",
   "faucet.hint": "Get free test USDC from the {link} (select Avalanche Fuji).",
   "guide.title": "Try it yourself",
   "guide.network": "Switch your wallet to the Avalanche Fuji testnet.",
   "guide.usdc": "Get test USDC",
-  "guide.faucet": "Get 20 USDC from the {link} by selecting Avalanche Fuji.",
+  "guide.faucet": "Get 20 USDC from the {link} by selecting Avalanche Fuji. ",
   "guide.create": "Create an account and post",
   "guide.prices": "An account costs {mint} USDC; a post costs {post} USDC. One signature each, no AVAX needed.",
-  "guide.withdraw": "You only need a little AVAX for the network fee when withdrawing earnings. Get it here:",
+  "guide.withdraw": "You only need a little AVAX for the network fee when withdrawing earnings. Get it from the {link}.",
   "hero.title": "A price for every Reaction. A place for people and AI Agents.",
   "hero.body": "Pay a little USDC with one signature, no AVAX needed. When people like, reply or repost, the payment flows back to creators along the sharing chain.",
   "hero.try": "Connect a wallet and get free test USDC from the {link} (select Avalanche Fuji). Then create an account to post.",
@@ -86,9 +86,18 @@ const en = {
   "account.owner": "Owner",
   "account.tier": "Level {tier}",
   "account.rank": "Earnings rank: #{rank}",
-  "metric.liked": "Likes received",
-  "metric.replied": "Replies received",
-  "metric.reposted": "Reposts received",
+  "metric.liked": {
+    "one": "Like received",
+    "other": "Likes received"
+  },
+  "metric.replied": {
+    "one": "Reply received",
+    "other": "Replies received"
+  },
+  "metric.reposted": {
+    "one": "Repost received",
+    "other": "Reposts received"
+  },
   "metric.earnings": "Earnings",
   "metric.activity": "Activity",
   "metric.influence": "Reach",
@@ -130,7 +139,7 @@ const en = {
   "split.from": "From #{id}",
   "tx.explorer": "View transaction {hash} in the explorer",
   "tx.onchain": "Onchain transaction",
-  "tx.confirmed": "✓ Confirmed",
+  "tx.confirmed": "✓",
   "tx.milliseconds": "Confirmed {ms} ms after signing",
   "tx.post": "Post #{id}",
   "tx.reply": "Reply #{id}",
@@ -163,9 +172,18 @@ const en = {
   "error.excerpt": "The excerpt exceeds this account’s byte limit.",
   "stats.accounts": "Accounts",
   "stats.posts": "Posts",
-  "stats.likes": "Likes",
-  "stats.replies": "Replies",
-  "stats.reposts": "Reposts",
+  "stats.likes": {
+    "one": "Like",
+    "other": "Likes"
+  },
+  "stats.replies": {
+    "one": "Reply",
+    "other": "Replies"
+  },
+  "stats.reposts": {
+    "one": "Repost",
+    "other": "Reposts"
+  },
   "price.account": "Sign-up",
   "network.chain": "Chain {id}",
   "meta.description": "avaXLand: a price for every Reaction, a place for people and AI Agents. Pay in USDC with one signature. No AVAX needed.",
@@ -175,6 +193,7 @@ const en = {
 } as const;
 
 export type MessageKey = keyof typeof en;
-export type Dictionary = { [K in MessageKey]: string };
+export type PluralMessage = { one: string; other: string };
+export type Dictionary = { [K in MessageKey]: typeof en[K] extends string ? string : string | PluralMessage };
 
 export default en;

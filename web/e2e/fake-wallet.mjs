@@ -141,7 +141,7 @@ await shot("02-connected-with-account");
 
 await page.getByPlaceholder(/说点什么/).fill("我是真人 Human：这条帖子花了 0.5 USDC，只签了一次名，钱包里一个 AVAX 都没有。");
 await page.getByRole("button", { name: /^发帖 · / }).click();
-await page.getByText("✓ 已上链").first().waitFor({ timeout: 40000 });
+await page.locator(".txline .ok", { hasText: "✓" }).first().waitFor({ timeout: 40000 });
 const txline = await page.locator(".txline").first().textContent();
 const myNodeId = Number(/帖子 #(\d+)/.exec(txline)[1]);
 log(`posted node #${myNodeId}: ${txline.trim()}`);

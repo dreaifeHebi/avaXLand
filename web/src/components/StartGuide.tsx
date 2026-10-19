@@ -20,8 +20,8 @@ export function FaucetHint({ need }: { need?: string | bigint }) {
   const short = need !== undefined && balance !== undefined && balance < BigInt(need);
   return (
     <span className={short ? "warn" : undefined}>
-      {balance !== undefined && t("faucet.balance", { amount: fmtUsdc(balance, 2) })}{" "}
-      {short && t("faucet.short")}{" "}
+      {balance !== undefined && t("faucet.balance", { amount: fmtUsdc(balance, 2) })}
+      {short && t("faucet.short")}
       <LinkedMessage message="faucet.hint" link={<FaucetLink />} />
     </span>
   );
@@ -50,7 +50,7 @@ export function StartGuide() {
         <li className={balance !== undefined && balance >= BigInt(p.mint) ? "done" : ""}>
           <b>{t("guide.usdc")}</b>
           <span className="small muted">
-            <LinkedMessage message="guide.faucet" link={<FaucetLink />} />{" "}
+            <LinkedMessage message="guide.faucet" link={<FaucetLink />} />
             {balance !== undefined && t("faucet.balance", { amount: fmtUsdc(balance, 2) })}
           </span>
         </li>
@@ -60,8 +60,7 @@ export function StartGuide() {
         </li>
       </ol>
       <p className="small muted">
-        {t("guide.withdraw")}{" "}
-        <a className="link" href={AVAX_FAUCET} target="_blank" rel="noreferrer">{t("faucet.avax")}</a>
+        <LinkedMessage message="guide.withdraw" link={<a className="link" href={AVAX_FAUCET} target="_blank" rel="noreferrer">{t("faucet.avax")}</a>} />
       </p>
     </section>
   );

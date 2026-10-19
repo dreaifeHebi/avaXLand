@@ -27,10 +27,15 @@ export function browserLocale(preferences: readonly string[]): Locale {
 
 export function translator(locale: Locale): Translate {
   const number = new Intl.NumberFormat(locale);
-  return (key, params = {}) => dictionaries[locale][key].replace(/\{(\w+)\}/g, (_, name: string) => {
-    const value = params[name]!;
-    return typeof value === "number" ? number.format(value) : value;
-  });
+  const plurals = new Intl.PluralRules(locale);
+  return (key, params = {}) => {
+    const message = dictionaries[locale][key];
+    const text = typeof message === "string" ? message : message[plurals.select(Number(params.count)) === "one" ? "one" : "other"];
+    return text.replace(/\{(\w+)\}/g, (_, name: string) => {
+      const value = params[name]!;
+      return typeof value === "number" ? number.format(value) : value;
+    });
+  };
 }
 
 interface I18n {

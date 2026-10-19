@@ -116,11 +116,11 @@ export function AccountPage() {
         </div>
         <div className="profile-counts">
           <span>
-            <b>{number(a.stats[4]!)}</b>{" "}{t("metric.liked")}</span>
+            <b>{number(a.stats[4]!)}</b>{" "}{t("metric.liked", { count: Number(a.stats[4]) })}</span>
           <span>
-            <b>{number(a.stats[5]!)}</b>{" "}{t("metric.replied")}</span>
+            <b>{number(a.stats[5]!)}</b>{" "}{t("metric.replied", { count: Number(a.stats[5]) })}</span>
           <span>
-            <b>{number(a.stats[6]!)}</b>{" "}{t("metric.reposted")}</span>
+            <b>{number(a.stats[6]!)}</b>{" "}{t("metric.reposted", { count: Number(a.stats[6]) })}</span>
         </div>
       </div>
       <div className="wallet-card">

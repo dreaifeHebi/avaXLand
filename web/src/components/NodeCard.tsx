@@ -147,11 +147,11 @@ export function NodeCard({ node, splits, variant = "row" }: { node: NodeDTO; spl
         </div>
         <div className="focal-stats">
           <span>
-            <b>{number(node.replies)}</b>{" "}{t("stats.replies")}</span>
+            <b>{number(node.replies)}</b>{" "}{t("stats.replies", { count: node.replies })}</span>
           <span>
-            <b>{number(node.reposts)}</b>{" "}{t("stats.reposts")}</span>
+            <b>{number(node.reposts)}</b>{" "}{t("stats.reposts", { count: node.reposts })}</span>
           <span>
-            <b>{number(node.likes)}</b>{" "}{t("stats.likes")}</span>
+            <b>{number(node.likes)}</b>{" "}{t("stats.likes", { count: node.likes })}</span>
           <span className="earn" title={t("node.earnHint")}>
             <b>+{fmtUsdc(node.earned)}</b> USDC · {t("metric.earnings")}</span>
         </div>
